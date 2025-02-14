@@ -1,0 +1,173 @@
+---
+title: SURV625 Applied Sampling
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+embed-resources: true
+editor: visual
+execute:
+  warning: false
+  error: false
+  tidy: true
+format: pdf
+---
+
+```{r setup, include=FALSE, tidy=TRUE}
+knitr::opts_chunk$set(echo=TRUE,cache=TRUE, 
+                      autodep=TRUE, cache.comments=FALSE,
+                      message=FALSE, warning=FALSE)
+
+pacman::p_load(readxl, tidyverse)
+
+options(scipen=999)
+```
+
+## SM 625: Week 6 Sampling Project Notes
+
+### From a previous study, you obtain estimates of the following design effects for each of these three estimates:
+
+-   proportion ever smoked one cigarette = 2.5;
+
+-   proportion ever smoked marijuana = 2.0; and
+
+-   mean age when first asked to smoke = 1.7.\
+
+### This previous study featured a sample of size n = 7,500 students between the ages of 13 and 19, selected from a total of a = 150 clusters. Using this information, compute a synthetic estimate of roh for each of the three variables. These synthetic estimates of roh will be used to consider alternative cluster sample designs as you continue with your project work. Finally, budget and cost information is now available. The total budget for data collection for this project will be \$500,000. The client and the data collection organization estimate that the data collection will cost \$3,000 per primary stage cluster (school), and \$50 per completed questionnaire within a cluster. We will use this cost information moving forward for optimal subsample size calculations.
+
+\
+
+We build a function that allows us to estimate $roh$ from varying design effects, average cluster size, and cluster/element costs to find the optimum element size.
+
+We denote the cost per cluster as $c_n = \$3,000$ and cost per element as $c_m = \$50$, with a total budget constraint of $C = \$500,000$. Since we know there are $n = 150$ clusters and a total sample size of $7,500$ students, we can use the average sample cluster size of $m = 7,500/150 = 50$.
+
+\
+
+We can estimate the sample ICC or roh from the given design effect estimate as:
+
+$$
+\hat{roh} = \frac{deff-1}{m-1}
+$$
+
+To compute the optimum $m$ size we use the following equation:
+
+$$
+m_{opt} = \sqrt{\frac{c_n}{c_m} \frac{1-roh}{roh}}
+$$
+
+\
+
+Finally, we compute the sampling cost as $n \times c_n + n \times m \times c_m$ which we defined these terms above.
+
+```{r}
+# function to estimate roh from deff, and optimum m plus sample cost.
+optimum_m_sample_fun <- function(deff, m, n, c_n, c_m, C) {
+  
+  roh = (deff - 1) / (m - 1)
+  
+  m_opt = sqrt( (c_n / c_m) * ( (1-roh)/roh) )
+  
+  
+  # is total larger than 500000?
+  # m * cost + n * cost
+  projected_cost = (c_n * n) + (c_m * n * m_opt) # cost per element
+  
+  cat(
+    str_c(
+      "With a design effect of ", deff, " and an average cluster size of ", m, 
+      "\nour estimated ICC/roh is ", round(roh, 5),
+      "\nand our optimum m is ", round(m_opt),
+      "\n\nWe woudl expect our cost to be ", scales::dollar(projected_cost),
+      "\nWhich we are left with ", scales::dollar(C-projected_cost), 
+      " from our total budget.\n\n\n\n")
+  )
+}
+```
+
+\
+
+We can loop the function through the three given design effects we save in a vector.
+
+```{r}
+deff_vector <- c(2.5, 2.0, 1.7)
+
+
+nm = 7500 # sample total elements
+n = 150 # sample number of cluster
+
+
+# pass function we created above
+walk(deff_vector, function(deff_value) {
+  
+  optimum_m_sample_fun(
+  deff = deff_value, 
+  m = nm/n, # sample cluster size
+  n = n, # sample number of clusters, 
+  c_n = 3000, # cost per cluster
+  c_m = 50, # cost per element within cluster
+  C = 500000 # total budget
+  )
+  
+  }
+)
+
+```
+
+\
+
+We are clearly above our budget, and if we wanted to optimize cluster $m$ size within our total budget constraint we can assume that we want $m=64$ cluster size and solve for how many clusters $n$ we would need to sample to stay within our budget. We can do this by calculating $\$500,000 = n(3000 + 64*50)$ which we arrange as $\$500,000 = 6200n = 80.6$, and if we round down this estimate of the number of cluster our final cost would be \$n \times c_n + n \times m \times c_m = \$ $80 \times 3000 + 80 \times 64 \times 50 = \$496,000$. Therefore, with a sample design of 80 clusters of size 64 elements each, we would be within our budget constraint while optimizing element size.
+
+\newpage
+
+## SM 625: Week 5 Sampling Project Notes
+
+### For this week, we will consider the information available for stratified sampling of students. Eventually you are going to design a stratified cluster sample of students, where the clusters (or PSUs) are schools, but we aren’t there yet.
+
+#### Recall the regions of interest in the sampling project description:
+
+```{r}
+
+school_frame <- read_xls(
+  "~/repos/UMD_classes_code/applied_sampling_SURV625/project/MI_school_frame_head_counts.xls")
+
+```
+
+```{r, echo=FALSE}
+school_frame |> 
+  select(Region, County_ID) |> 
+  group_by(Region) |> 
+  distinct(County_ID) |> 
+  summarise_all(toString)
+  
+```
+
+### As “State officials are interested in providing, if at all possible, separate estimates for each of nine education regions in the state, where the regions are defined by groups of counties”, we will use these nine regions as strata.
+
+###\$ Prepare a table that includes the:
+
+-   Overall population counts in each of these nine strata (the total count of students in the target population at each school is in the tot_all column on the sampling frame).
+
+-   Given these counts, once you have the working overall sample size (unknown for now and will be decided by your team next week), what is the proportionate allocation plan of that sample of students across these nine strata?
+
+```{r}
+
+# we will use Region, County_ID, and tot_all
+
+# region counts
+school_frame |> 
+  group_by(Region) |> 
+  tally(tot_all) |> 
+  mutate(prop_allo = n/sum(n)) |> 
+  rename(pop_count = n)
+
+
+# what is the proportionate allocation plan of that sample 
+## of students across these nine strata?
+
+
+```
+
+\newpage
+
+## SM 625: Week 4 Sampling Project Notes
+
+### For each of the three variables that will be the focus of the final course project, the Department of Education would like to generate estimates of means and proportions having a coefficient of variation of no more than 0.05. Using the numbers provided to you in the description of the final project, compute estimates of the element variances for each variable. Given these estimates, compute the desired level of precision (the desired sampling variance) for each estimate that corresponds to the desired coefficient of variation. 
+
+### Now, given the desired levels of precision for each estimate, compute estimates of the necessary sample sizes for each of these three estimates (assuming simple random sampling), ignoring the finite population correction. These will be starting points for the eventual two-stage cluster sample design.
