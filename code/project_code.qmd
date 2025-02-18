@@ -125,7 +125,7 @@ We are clearly above our budget, and if we wanted to optimize cluster $m$ size w
 ```{r}
 
 school_frame <- read_xls(
-  "~/repos/UMD_classes_code/applied_sampling_SURV625/project/MI_school_frame_head_counts.xls")
+  "~/repos/SURV625project/data/MI_school_frame_head_counts.xls")
 
 ```
 
@@ -134,13 +134,14 @@ school_frame |>
   select(Region, County_ID) |> 
   group_by(Region) |> 
   distinct(County_ID) |> 
+  arrange(County_ID) |> 
   summarise_all(toString)
   
 ```
 
 ### As “State officials are interested in providing, if at all possible, separate estimates for each of nine education regions in the state, where the regions are defined by groups of counties”, we will use these nine regions as strata.
 
-###\$ Prepare a table that includes the:
+### Prepare a table that includes the:
 
 -   Overall population counts in each of these nine strata (the total count of students in the target population at each school is in the tot_all column on the sampling frame).
 
@@ -168,6 +169,90 @@ school_frame |>
 
 ## SM 625: Week 4 Sampling Project Notes
 
-### For each of the three variables that will be the focus of the final course project, the Department of Education would like to generate estimates of means and proportions having a coefficient of variation of no more than 0.05. Using the numbers provided to you in the description of the final project, compute estimates of the element variances for each variable. Given these estimates, compute the desired level of precision (the desired sampling variance) for each estimate that corresponds to the desired coefficient of variation. 
+### For each of the three variables that will be the focus of the final course project, the Department of Education would like to generate estimates of means and proportions having a coefficient of variation of no more than 0.05. Using the numbers provided to you in the description of the final project, compute estimates of the element variances for each variable. Given these estimates, compute the desired level of precision (the desired sampling variance) for each estimate that corresponds to the desired coefficient of variation.
 
 ### Now, given the desired levels of precision for each estimate, compute estimates of the necessary sample sizes for each of these three estimates (assuming simple random sampling), ignoring the finite population correction. These will be starting points for the eventual two-stage cluster sample design.
+
+\
+
+### Desired sample size for variables of interest:
+
+#### For the first variable **ever smoked one cigarette** (expected proportion = 0.25), we estimate the 
+
+```{r}
+# total student population in Michigan
+N <- school_frame |> tally(tot_all) |> pull()
+
+# desired coefficient variance
+CV <- 0.05
+```
+
+#### The estimated element variance for this proportion is given as:
+
+```{r}
+p_hat <- 0.25
+```
+
+$$
+S^2 = \frac{N}{N-1}p(1-p)
+$$
+
+#### 
+
+```{r}
+s_2 <- (N / (N-1)) * p_hat*(1-p_hat) ;  s_2
+```
+
+#### We can estimate the desired standard error using the desired CV and the estimated proportion for this variable.
+
+```{r}
+se <- CV * p_hat ; se
+se
+```
+
+#### Our desired variance for this proportion is than:
+
+$$
+var(\hat{p}) =  se(\hat{p})^2 \text{, where }  se(\hat{p}) = \sqrt{var(\hat{p})}
+$$
+
+```{r}
+V <- se^2; V
+```
+
+#### Now we can compute the desired sample size with a desired CV = .05 as:
+
+```{r}
+n <- s_2 / V; round(n)
+```
+
+\
+
+For the next variable **ever smoked marijuana** (expected proportion = 0.15), we do the same procedure as before, but in one code chunk as:
+
+```{r}
+p_hat <- 0.15
+s_2 <- (N / (N-1)) * p_hat*(1-p_hat) ; s_2 # element variance
+se <- CV * p_hat
+V <- se^2
+n <- s_2 / V; round(n)
+```
+
+\
+
+In working with a sample mean, the formulas are slightly different. For the third variable, **age when first approach to smoke cigarettes or marijuana** (expected mean = 12, expected SD = 1), we compute the desired sample size for a desired CV=0.05 using the given expected mean and standard deviation as:
+
+```{r}
+y_bar <- 12
+sd <- 1
+s_sqrd <- sd^1
+
+#  critical value
+z <- 1.96
+# build equation to calculate n_0
+n_0 <- s_sqrd / (CV*y_bar)^2
+n <- n_0 / ( 1 + (n_0/N) )
+round(n)
+```
+
+#### 
