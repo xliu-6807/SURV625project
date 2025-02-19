@@ -177,7 +177,7 @@ school_frame |>
 
 ### Desired sample size for variables of interest:
 
-#### For the first variable **ever smoked one cigarette** (expected proportion = 0.25), we estimate the 
+#### For the first variable **ever smoked one cigarette** (expected proportion = 0.25), we estimate the
 
 ```{r}
 # total student population in Michigan
@@ -223,7 +223,8 @@ V <- se^2; V
 #### Now we can compute the desired sample size with a desired CV = .05 as:
 
 ```{r}
-n <- s_2 / V; round(n)
+n_0 <- s_2 / V
+n <- n_0 / (1+(n_0/N)) ; round(n)
 ```
 
 \
@@ -235,7 +236,8 @@ p_hat <- 0.15
 s_2 <- (N / (N-1)) * p_hat*(1-p_hat) ; s_2 # element variance
 se <- CV * p_hat
 V <- se^2
-n <- s_2 / V; round(n)
+n_0 <- s_2 / V
+n <- n_0 / (1+(n_0/N)) ; round(n)
 ```
 
 \
@@ -245,7 +247,7 @@ In working with a sample mean, the formulas are slightly different. For the thir
 ```{r}
 y_bar <- 12
 sd <- 1
-s_sqrd <- sd^1
+s_sqrd <- sd^2
 
 #  critical value
 z <- 1.96

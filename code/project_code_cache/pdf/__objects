@@ -8,6 +8,6 @@ unnamed-chunk-7	p_hat
 unnamed-chunk-8	s_2
 unnamed-chunk-9	se
 unnamed-chunk-10	V
-unnamed-chunk-11	n
-unnamed-chunk-12	n	p_hat	s_2	se	V
+unnamed-chunk-11	n	n_0
+unnamed-chunk-12	n	n_0	p_hat	s_2	se	V
 unnamed-chunk-13	n	n_0	s_sqrd	sd	y_bar	z
