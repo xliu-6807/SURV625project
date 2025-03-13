@@ -167,12 +167,12 @@ m <- nm / n
 
 MI_school_samples <- MI_school_samples |> 
   # add deff and roh to our table
-  mutate(desired_deff = c(2.5, 2.0, 1.7),
+  mutate(desire_deff = c(2.5, 2.0, 1.7),
          # compute roh
-         roh = (desired_deff - 1) / (m - 1)
+         roh = (desire_deff - 1) / (m - 1)
          )
 
-MI_school_samples |> select(Outcome, desired_deff, roh) |>  kable()
+MI_school_samples |> select(Outcome, desire_deff, roh) |>  kable()
 ```
 
 \newpage
@@ -183,15 +183,13 @@ Recall that the client and the data collection organization estimated that the d
 
 Given this cost information and your estimates of roh for the three different variables of primary interest from last week, compute the optimum subsample size (and the corresponding optimal number of first stage clusters, given the total budget above) for each of the variables.
 
-We now have budget constraints and denote the cost per cluster as $c_n = \$3,000$ and cost per element as $c_m = \$50$, with a total budget constraint of $C = \$500,000$. Since we know there are $n = 150$ clusters and a total sample size of $7,500$ students.
+-   We now have budget constraints and denote the cost per cluster as $c_n = \$3,000$ and cost per element as $c_m = \$50$, with a total budget constraint of $C = \$500,000$. Since we know there are $n = 150$ clusters and a total sample size of $7,500$ students.
 
-To compute the optimum $m$ size we use the following equation:
+-   To compute the optimum $m$ size we use the following equation:
 
 $$ 
 m_{opt} = \sqrt{\frac{c_n}{c_m} \frac{1-roh}{roh}} 
 $$
-
-Finally, we compute the sampling cost as $n \times c_n + n \times m \times c_m$ which we defined these terms above.
 
 ```{r}
 c_n = 3000 # cost per cluster
@@ -212,11 +210,10 @@ MI_school_samples |> select(Outcome, roh, m_opt, n_opt) |>
   kable()
 ```
 
-\
-
 **How will you decide on a single overall optimum subsample size to use in your design?**
 
--   Here we compute the total sample size under `total_nm` and projected cost which is right at budget.
+-   Above we estimated the new design effects which range from 2.3 to 1.9, which are almost in line with our desired design effects of 2.5, 1.7. Below we print the new design effects, optimum number of cluster and cluster size, total sample size `total_nm`for our projected \$500,000 budget for all three outcome variables.
+    -   Finally, we compute the sampling cost as $n \times c_n + n \times m \times c_m$ which we defined these terms above.
 
 ```{r}
 
@@ -224,55 +221,7 @@ MI_school_samples |>
   select(Outcome, roh, m_opt, n_opt, deff_new, total_nm) |> 
   mutate(projected_cost = (c_n * n_opt) + (c_m * n_opt * m_opt),
          projected_cost = scales::dollar(projected_cost)) |> 
-  kable()
-```
-
--   We also compute the total sample size for these three options, and from here we can compute the total cost as $n \times  c_n + n \times m \times c_m$ which we use to determine the optimum subsample size for each variable.
-    -   option 1 which is 96 clusters with size 43 and total sample of 4,207.
-
-```{r}
-
-MI_school_samples |> 
-  select(Outcome, roh, m_opt, n_opt, total_nm) |> 
-  # we can print projected total cost for n=50
-  mutate(m_opt = m_opt[1], # optimum m from first row
-         n_opt = n_opt[1],
-         total_nm = m_opt*n_opt,
-         deff_new = 1 + (m_opt-1) * roh) |> 
-  mutate(projected_cost = (c_n * n_opt) + (c_m * n_opt * m_opt),
-         projected_cost = scales::dollar(projected_cost)) |> 
-  kable()
-```
-
-###### Note. if we round up for the optimum $m$ and $n$ we would slightly be above the total budget.
-
--   Option 2, which is 87 clusters with size 53 and total sample of 4,221.
-
-```{r}
-MI_school_samples |> 
-  select(Outcome, roh, m_opt, n_opt, total_nm) |> 
-  # we can print projected total cost for n=50
-  mutate(m_opt = m_opt[2], # optimum m from first row
-         n_opt = n_opt[2],
-         total_nm = m_opt*n_opt,
-         deff_new = 1 + (m_opt-1) * roh) |> 
-  mutate(projected_cost = (c_n * n_opt) + (c_m * n_opt * m_opt),
-         projected_cost = scales::dollar(projected_cost)) |> 
-  kable()
-```
-
--   Option 3, which is 80 clusters with size 64 and total sample of 5,174.
-
-```{r}
-MI_school_samples |> 
-  select(Outcome, roh, m_opt, n_opt, total_nm) |> 
-  # we can print projected total cost for n=50
-  mutate(m_opt = m_opt[3], # optimum m from first row
-         n_opt = n_opt[3],
-         total_nm = m_opt*n_opt,
-         deff_new = 1 + (m_opt-1) * roh) |> 
-  mutate(projected_cost = (c_n * n_opt) + (c_m * n_opt * m_opt),
-         projected_cost = scales::dollar(projected_cost)) |> 
+  mutate_at(2:6, round, 4) |> 
   kable()
 ```
 
@@ -280,36 +229,121 @@ MI_school_samples |>
 
 **Think about a comparison of alternative cluster sample designs: under a fixed cost constraint, how would we decide which design would be best? What will be your overall sample size (n) under this new optimum subsample size?**
 
--   Option 3 gives us the largest sample size (5,174) with highest design effects (see option 3) for 2 of 3 outcome variables. This is the optimal design while being at budget.
-
-\
-
 As you make progress in writing up what you have done so far, provide some discussion of the rationale for your choices in this regard.
 
 Next, given this optimum subsample size and treating the values of roh as portable, compute the new expected DEFF for each estimate given the new design (this can be specific to each variable / estimate, given the different optimum subsample sizes). In addition, compute a new expected SRS variance for each variable under the new design, using the new “optimum” overall sample size (remember that you can treat the element variances for each variable estimated last week as portable). Finally, compute the new expected sampling variance for each estimate under this new cluster sample design. Are you still meeting the client’s precision requirements?
 
--   We will need to use the optimum n and m of each row and project them to the other rows to calculate the design effect: deff = (SAM_variance / SRS_variance). This should give us an idea of the mean deff for three total projections.
+-   Given that we have three outcome variables, we also have three optimum number of clusters and cluster size estimates. That is, we can design and examine three options of different optimum number of clusters and cluster sizes.
+-   We will use the portable roh estimate and calculate new design effects, SRS variance, and complex design variance for each outcome variable.
+    -   
+
+```{r, message=FALSE, warning=FALSE}
+
+map(seq(1,3), function(x){
+  
+  
+  MI_school_samples |> 
+  select(Outcome, s_sqrd, roh, m_opt, n_opt, total_nm) |> 
+  # we can print projected total cost for n=50
+  mutate(m_opt = m_opt[x], # optimum m from first row
+         n_opt = n_opt[x],
+         total_nm = m_opt*n_opt,
+         # calculate new deff
+         deff_new = 1 + (m_opt-1) * roh,
+         # calcualte SRS variance
+         var_srs = s_sqrd / (total_nm - 1),
+         # calculate complex design variance
+         var_crs = var_srs * deff_new,
+         #m_opt = round(m_opt)
+         ) |>
+    mutate_at(4:6, floor) |> 
+    mutate_at(7:9, round, 5) |> 
+  select(-roh, -s_sqrd) |> 
+  kable()
+  
+}) |> 
+  set_names(str_c(rep("Option ", 3), seq(1,3)))
+
+
+```
+
+We print standard error for the complex design with 95% confidence intervals.
 
 ```{r}
-# compute deff under the optimum 
-#MI_school_samples <- 
-
-MI_school_samples
-
-MI_school_samples |> 
-  mutate(var_srs =  (1-( (n_opt*m_opt) / (m*n)) ) * 
-           ( (expect_mean*(1-expect_mean)) / (total_nm - 1))  ) |> 
-  select(Outcome, deff_new, var_srs)
-
-#n_new <- 40
-#nm_new <- n_new * m_new
-#f_new <- nm_new / NM
-#s_sqrd_new <- ( sum(y_bar^2) - ( ((sum(y_bar))^2 / n_new)) / ((m^2)*(n_new-1)) )
-#var_srs_new <- (1 - f_new) * (1 / (nm_new^2)) * s_sqrd_new; var_srs_new
+map(seq(1,3), function(x){
+  
+  
+  MI_school_samples |> 
+  select(Outcome, expect_mean, s_sqrd, roh, m_opt, n_opt, total_nm) |> 
+  # we can print projected total cost for n=50
+  mutate(m_opt = m_opt[x], # optimum m from first row
+         n_opt = n_opt[x],
+         total_nm = m_opt*n_opt,
+         # calculate new deff
+         deff_new = 1 + (m_opt-1) * roh,
+         # calcualte SRS variance
+         var_srs = s_sqrd / (total_nm - 1),
+         # calculate complex design variance
+         var_crs = var_srs * deff_new,
+         # compute confidence intervals
+         se = sqrt(var_crs),
+         lower = expect_mean  - 1.96*se,
+         upper = expect_mean + 1.96*se) |>
+    mutate_at(3:5, round, 4) |> 
+  select(Outcome, expect_mean, se, lower, upper) |> 
+  kable()
+  
+}) |> 
+  set_names(str_c(rep("Option ", 3), seq(1,3)))
 ```
+
+\
+
+-   Option 2 with a number of cluster of 87 and cluster size of 53 is the design we will choose given that the total sample size of 4,721 is within the allocated budget (\$491,550). We prefer this model because it stays close to the desired design effects we received from the customer. Additionally, the standard errors we estimate for this second option overall are the smallest resulting in tighter 95% confidence intervals for the expected estimates we were provided. This design in close to option 3, yet we prefer having a slightly smaller SSU if we can increase the number of PSUs sampled since this gives us a cost efficiency.\
 
 The client has also provided other new information: the estimated size of the target population is N = 830,138. Given this population size and your overall sample size (n) under the new optimum subsample size computed above, what is your overall working sampling fraction (f)? Does it seem like finite population corrections will be necessary in your sampling variances if you choose to perform SRSWOR at some point?
 
-The tables that you are developing and the text that accompanies them should carefully reflect the answers to all of the questions above.
+```{r}
+# total pop
+N <- 830138
+# optimum n
+total_nm <- 4721
+samp_frac <- total_nm / N; samp_frac
 
--   We will need to use the optimim n and m of each row and project them to the other rows to calculate the design effect: deff = (SAM_variance / SRS_variance). This should give us an idea of the mean deff for three total projections.
+MI_school_samples |>  select(Outcome, expect_mean, s_sqrd, roh, m_opt, n_opt, total_nm) |> 
+  # we can print projected total cost for n=50
+  mutate(m_opt = m_opt[2], # optimum m from first row
+         n_opt = n_opt[2],
+         total_nm = m_opt*n_opt,
+         # calculate new deff
+         deff_new = 1 + (m_opt-1) * roh,
+         # calcualte SRS variance
+         var_srs =(1 - samp_frac) * s_sqrd / (total_nm - 1),
+         # calculate complex design variance
+         var_crs = var_srs * deff_new,
+         # compute confidence intervals
+         se = sqrt(var_crs),
+         lower = expect_mean  - 1.96*se,
+         upper = expect_mean + 1.96*se) |>
+  select(Outcome, var_srs, var_crs, se, lower, upper) |> 
+  mutate_at(2:6, round, 5) |> 
+  kable()
+```
+
+Our overall sampling fraction is .0057. In examining the SRS and complex design variances, and recalculating the expected standard error and 95% confidence interval, it does not appear that accounting for a population correction makes a huge impact, and we suggest it will not be necessary in our sampling variance for an SRSWOR design.
+
+\newpage
+
+# TO DO NEXT . . .
+
+## SM 625: Week 8 Sampling Project Notes
+
+Assume that you will decide to allocate your final computed $n_{opt}$ number of clusters to each of the nine project strata based on the proportions of the total number of students in the population in each stratum (i.e., if 20% of the population of students comes from Region 1, you would sample 20% of your clusters from that region). Describe the first-stage sampling fractions for each stratum, where the total number of schools to sample at the first stage in each stratum is defined by your proportionate allocation of the $n_{opt}$ clusters.
+
+Next your team should extend your design to consider stratified PPeS selection of schools from each of the nine strata at the first stage of your sample design.
+
+You have been provided with a sampling frame that lists the schools within each region. Given the information on the sampling frame, how might you sort this list to achieve implicit stratification within the regions? You can treat the overall student count from a previous year (tot_all) as the measure of size for the PPeS sampling. Given this information, compute your zone size for systematic PPeS sampling within each of the nine strata (regions), and proceed with systematic selection based on fractional intervals to select the allocated number of schools within each stratum using PPeS sampling. What is your first-stage sampling fraction within each of the nine strata?
+
+Now, suppose that you have the entire list of sampled schools from a given stratum. As outlined in the project description, the client wishes to work under a paired selection model for estimation of sampling variance. How would you form pseudo-strata to meet this request, based on your systematic sampling within each first-stage stratum? We aren’t ready to write the estimation methods section yet, but you can describe this general process as a part of the description of your first-stage sampling.
+
+In future weeks, we will work on determining the sampling rates within each of the sampled schools to maintain epsem across the nine strata. For now, your focus should be on refining the description of the first-stage sampling process.
