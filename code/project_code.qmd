@@ -6,16 +6,13 @@ editor: visual
 execute:
   warning: false
   error: false
+  message: false
   tidy: true
 format: pdf
 ---
 
-```{r setup, include=FALSE, tidy=TRUE}
-knitr::opts_chunk$set(echo=TRUE,cache=TRUE, 
-                      autodep=TRUE, cache.comments=FALSE,
-                      message=FALSE, warning=FALSE)
-
-pacman::p_load(readxl, knitr, tidyverse)
+```{r setup, include=FALSE}
+pacman::p_load(readxl, knitr, sampling, tidyverse)
 
 options(scipen=999)
 ```
@@ -94,7 +91,7 @@ MI_school_samples |> select(1, SRS_n) |> kable()
 ```{r}
 
 school_frame <- read_xls(
-  "~/repos/SURV625project/data/MI_school_frame_head_counts.xls")
+  "~/work/d/SURV625project/data/MI_school_frame_head_counts.xls")
 
 ```
 
@@ -122,14 +119,14 @@ school_frame |>
 # we will use Region, County_ID, and tot_all
 
 # region counts
-school_frame |> 
+strata_Prop_allocate <- school_frame |> 
   group_by(Region) |> 
   tally(tot_all) |> 
   mutate(prop_allocation = n/sum(n)) |> 
-  rename(pop_count = n) |> 
+  rename(pop_count = n) 
+
+strata_Prop_allocate |> 
   kable()
-
-
 # what is the proportionate allocation plan of that sample 
 ## of students across these nine strata?
 
@@ -234,8 +231,10 @@ As you make progress in writing up what you have done so far, provide some discu
 Next, given this optimum subsample size and treating the values of roh as portable, compute the new expected DEFF for each estimate given the new design (this can be specific to each variable / estimate, given the different optimum subsample sizes). In addition, compute a new expected SRS variance for each variable under the new design, using the new “optimum” overall sample size (remember that you can treat the element variances for each variable estimated last week as portable). Finally, compute the new expected sampling variance for each estimate under this new cluster sample design. Are you still meeting the client’s precision requirements?
 
 -   Given that we have three outcome variables, we also have three optimum number of clusters and cluster size estimates. That is, we can design and examine three options of different optimum number of clusters and cluster sizes.
--   We will use the portable roh estimate and calculate new design effects, SRS variance, and complex design variance for each outcome variable.
-    -   
+
+-   
+
+    ## We will use the portable roh estimate and calculate new design effects, SRS variance, and complex design variance for each outcome variable.
 
 ```{r, message=FALSE, warning=FALSE}
 
@@ -310,7 +309,8 @@ N <- 830138
 total_nm <- 4721
 samp_frac <- total_nm / N; samp_frac
 
-MI_school_samples |>  select(Outcome, expect_mean, s_sqrd, roh, m_opt, n_opt, total_nm) |> 
+MI_school_samples |>  select(Outcome, expect_mean, s_sqrd, roh, 
+                             m_opt, n_opt, total_nm) |> 
   # we can print projected total cost for n=50
   mutate(m_opt = m_opt[2], # optimum m from first row
          n_opt = n_opt[2],
@@ -334,11 +334,26 @@ Our overall sampling fraction is .0057. In examining the SRS and complex design 
 
 \newpage
 
-# TO DO NEXT . . .
-
 ## SM 625: Week 8 Sampling Project Notes
 
 Assume that you will decide to allocate your final computed $n_{opt}$ number of clusters to each of the nine project strata based on the proportions of the total number of students in the population in each stratum (i.e., if 20% of the population of students comes from Region 1, you would sample 20% of your clusters from that region). Describe the first-stage sampling fractions for each stratum, where the total number of schools to sample at the first stage in each stratum is defined by your proportionate allocation of the $n_{opt}$ clusters.
+
+-   Using the proportionate allocation by strata computed earlier, we assign and add cluster allocation by stratum.
+
+```{r}
+# Given values
+n_opt <- 87
+m_opt <- 53
+
+
+# Compute proportional allocation of clusters to each stratum
+strata_Prop_allocate <- strata_Prop_allocate |> 
+  # Ensure at least 1 cluster per
+  mutate(clusters_allocated = pmax(1, round(n_opt * prop_allocation)))         
+
+strata_Prop_allocate |> 
+  kable()
+```
 
 Next your team should extend your design to consider stratified PPeS selection of schools from each of the nine strata at the first stage of your sample design.
 
@@ -347,3 +362,88 @@ You have been provided with a sampling frame that lists the schools within each 
 Now, suppose that you have the entire list of sampled schools from a given stratum. As outlined in the project description, the client wishes to work under a paired selection model for estimation of sampling variance. How would you form pseudo-strata to meet this request, based on your systematic sampling within each first-stage stratum? We aren’t ready to write the estimation methods section yet, but you can describe this general process as a part of the description of your first-stage sampling.
 
 In future weeks, we will work on determining the sampling rates within each of the sampled schools to maintain epsem across the nine strata. For now, your focus should be on refining the description of the first-stage sampling process.
+
+-   We also calculate the first stage probability of selection using the equation below, which we take the sum of MOS in each strata multiplied by the number of schools to be selected, divided by the total MOS.
+
+$$
+\frac{nMOS_i}{\sum_t MOS_i}
+$$
+
+```{r}
+# Implement systematic PPeS sampling
+set.seed(123)
+
+school_frame <- school_frame |> 
+  # compute 1st stage
+  mutate( pik =  pmin(1, ( (n_opt * tot_all) / sum(tot_all) )), 
+          selected  = UPsystematic(pik))
+
+sampled_schools <- school_frame |> 
+  filter(selected == 1) |> arrange(tot_all)
+
+sampled_schools |> 
+  select(Region, BNAME, tot_all) |>
+  rename(MOS = tot_all) |> 
+  arrange(Region) |> 
+  kable()
+
+```
+
+-   We sort selected schools by MOS size and collapse neighboring zones to create pseudo strata that have more than one selection. We print the first one here as an example.
+
+```{r}
+
+num_pairs <- floor(nrow(sampled_schools) / 2)
+
+# create sampled pairs
+paired_strata <- sampled_schools |> 
+  mutate(group_id = rep(1:num_pairs, each = 2,
+                        length.out = nrow(sampled_schools))) |> 
+  group_by(group_id) |> 
+  group_split()
+
+paired_strata[[1]] |> 
+  select(Region, BNAME, tot_all) |>
+  kable()
+
+```
+
+\newpage
+
+## SM 625: Week 10 Sampling Project Notes
+
+There are four primary tasks for your team to consider over the next week:
+
+1.  Given your overall $m_{opt}$ $n_opt$ and N (based on the sampling frame), you’ve already computed the overall sampling fraction, 𝑓. For each of the nine strata, compute the required number of students to subsample from each sampled school based on the stratified PPeS design in order to maintain epsem across all strata.
+
+-   Within strata, retain epsem for stratified PPS sampling across strata $f = f_h$ for all $h$.
+
+$$
+f_h = \frac{n_h MOS_{hi} }{\sum,_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}} 
+$$
+
+BELOW CANNOT BE RIGHT, WE GET THE SAME M SIZE FOR EACH STRATA
+
+```{r}
+# overall sampling fraction
+f <- samp_frac # calculated earlier .0057
+
+school_frame |> 
+  group_by(Region) |> 
+  reframe(schools = n(), students = sum(tot_all)) |> 
+  # compute sampling rates
+  mutate(f_h = f * (N / (n_opt * students)),
+         # compute subsample size
+         n_students =   f_h * students) |> 
+  kable()
+```
+
+2.  Do each of the schools that you sampled in a given region have the minimum sufficient size, given the stratum-specific subsample sizes computed in Task #1? Do subsequent schools on the list have the minimum sufficient size? If not, what will you do?
+
+    2.  School 07809 does not meet the requirement of 54 students. The next school in sequence does not meet the minimum requirement with only 29 student, but the next school in sequence does meet the requirement. We will need to link these two schools.
+
+3.  Begin to describe how you will physically select the subsample of students within a given sampled school (or set of linked schools). What will your second-stage sampling rate be for a given school within a given stratum? How will you acquire the updated rosters from each school? What technique will you use to select the sample at the specified second-stage rate?
+
+    2.  The linking is done by first selecting $n_{opt}$ schools from each strata. When the next school on the list do not meet the sufficient size required of $m_{opt}$ student size we move down the list until the first school that meets the minimum requirement is achieved. For all the schools that did not meet the requirement they are cumulated backwards until a linked school of minimum sufficient size is created. We do this process for all the schools initially selected.
+
+4.  Write down the overall sampling fraction based on the stratified PPeS design, indicating the overall probability of inclusion for a given student, from a given school (or linked set of schools), in a given stratum. Be careful with notation. Keep in mind that the MOS values used for the sampled schools at the first stage and the denominator at the second stage (Did you sample a single school? Or a linked set of schools?) will depend on your response to Task #2 above
