@@ -12,7 +12,7 @@ format: pdf
 ---
 
 ```{r setup, include=FALSE}
-pacman::p_load(readxl, knitr, sampling, tidyverse)
+pacman::p_load(readxl, writexl, MESS, knitr, sampling, tidyverse)
 
 options(scipen=999)
 ```
@@ -34,7 +34,7 @@ MI_school_samples <- tibble(
   Outcome = c("smoked_cig", "smoked_mj", "age_approached_to_smoke"),
   type = c("prop", "prop", "mean"),
   desire_cv = rep(.05, 3),
-  expect_mean = c(.25, .15, 12)
+  expect_mean = c(.25, .15, 12),
 ) 
   # calculate element 
 MI_school_samples |> kable()
@@ -57,13 +57,15 @@ MI_school_samples |> kable()
 MI_school_samples <- MI_school_samples |> 
   mutate(
     # compute element variance
-    s_sqrd = if_else(type=="prop", # for proportions
+    var = if_else(type=="prop", # for proportions
                                expect_mean * (1 - expect_mean), 
                                if_else(type=="mean",# for means
                                        1^2, NA)),
+    # compute stand dev
+    sd = sqrt(var),
     # compute standard error
     se = desire_cv * expect_mean,
-    # compute variance
+    # compute desired sample variance
     V = se^2     
     )
 
@@ -75,7 +77,7 @@ We now estimate the desired sample sizes when we desire a CV =.05 as $n = \frac{
 
 ```{r}
 MI_school_samples <- MI_school_samples |> 
-  mutate(SRS_n = s_sqrd / V)
+  mutate(SRS_n = var / V)
 
 MI_school_samples |> select(1, SRS_n) |> kable()
 ```
@@ -121,9 +123,9 @@ school_frame |>
 # region counts
 strata_Prop_allocate <- school_frame |> 
   group_by(Region) |> 
-  tally(tot_all) |> 
-  mutate(prop_allocation = n/sum(n)) |> 
-  rename(pop_count = n) 
+  reframe(M_h = sum(tot_all), # total of students in stratum
+         N_h = n()) |> # total of schools in stratum
+  mutate(prop_allocation = M_h/sum(M_h)) 
 
 strata_Prop_allocate |> 
   kable()
@@ -232,32 +234,32 @@ Next, given this optimum subsample size and treating the values of roh as portab
 
 -   Given that we have three outcome variables, we also have three optimum number of clusters and cluster size estimates. That is, we can design and examine three options of different optimum number of clusters and cluster sizes.
 
--   
-
-    ## We will use the portable roh estimate and calculate new design effects, SRS variance, and complex design variance for each outcome variable.
+-   We will use the portable roh estimate and calculate new design effects, SRS variance, and complex design variance for each outcome variable.
 
 ```{r, message=FALSE, warning=FALSE}
-
+  
 map(seq(1,3), function(x){
   
-  
   MI_school_samples |> 
-  select(Outcome, s_sqrd, roh, m_opt, n_opt, total_nm) |> 
+  select(Outcome, roh, m_opt, n_opt, total_nm) |> 
   # we can print projected total cost for n=50
   mutate(m_opt = m_opt[x], # optimum m from first row
          n_opt = n_opt[x],
          total_nm = m_opt*n_opt,
          # calculate new deff
          deff_new = 1 + (m_opt-1) * roh,
+         # recalcualte element variance
+         var = c(.24, .1275, 9),
          # calcualte SRS variance
-         var_srs = s_sqrd / (total_nm - 1),
+         var_srs =  var / (total_nm - 1),
          # calculate complex design variance
          var_crs = var_srs * deff_new,
          #m_opt = round(m_opt)
          ) |>
-    mutate_at(4:6, floor) |> 
-    mutate_at(7:9, round, 5) |> 
-  select(-roh, -s_sqrd) |> 
+    select(-roh, -var)  |> 
+    mutate_at(2:3, floor) |> 
+    mutate(total_nm = m_opt*n_opt) |> 
+    mutate_at(5:7, round, 5) |> 
   kable()
   
 }) |> 
@@ -266,30 +268,33 @@ map(seq(1,3), function(x){
 
 ```
 
-We print standard error for the complex design with 95% confidence intervals.
+We print standard error for the complex design with 95% confidence intervals, and we also flag whether the sampling variance from the clustering is equal or smaller than the desired sampling variance.
 
 ```{r}
 map(seq(1,3), function(x){
   
-  
   MI_school_samples |> 
-  select(Outcome, expect_mean, s_sqrd, roh, m_opt, n_opt, total_nm) |> 
+  select(Outcome, expect_mean, V, roh, m_opt, n_opt, total_nm) |> 
   # we can print projected total cost for n=50
   mutate(m_opt = m_opt[x], # optimum m from first row
          n_opt = n_opt[x],
          total_nm = m_opt*n_opt,
          # calculate new deff
          deff_new = 1 + (m_opt-1) * roh,
+        # recalcualte element variance
+         var = c(.24, .1275, 9),
          # calcualte SRS variance
-         var_srs = s_sqrd / (total_nm - 1),
+         var_srs =  var / (total_nm - 1) ,
          # calculate complex design variance
          var_crs = var_srs * deff_new,
          # compute confidence intervals
          se = sqrt(var_crs),
          lower = expect_mean  - 1.96*se,
-         upper = expect_mean + 1.96*se) |>
+         upper = expect_mean + 1.96*se,
+        # flag if var_crs is lower or = to desired sampling var
+         var_ck = ifelse(var_crs <= V, "yes", "no")) |>
     mutate_at(3:5, round, 4) |> 
-  select(Outcome, expect_mean, se, lower, upper) |> 
+  select(Outcome, expect_mean, se, lower, upper, var_ck) |> 
   kable()
   
 }) |> 
@@ -298,18 +303,19 @@ map(seq(1,3), function(x){
 
 \
 
--   Option 2 with a number of cluster of 87 and cluster size of 53 is the design we will choose given that the total sample size of 4,721 is within the allocated budget (\$491,550). We prefer this model because it stays close to the desired design effects we received from the customer. Additionally, the standard errors we estimate for this second option overall are the smallest resulting in tighter 95% confidence intervals for the expected estimates we were provided. This design in close to option 3, yet we prefer having a slightly smaller SSU if we can increase the number of PSUs sampled since this gives us a cost efficiency.\
+-   Option 2 with a number of cluster of 87 and cluster size of 53 is the design we will choose given that the total sample size of 4,611 is within the allocated budget (\$491,550). We prefer this model because it stays close to the desired design effects we received from the customer. Additionally, the standard errors we estimate for this second option overall are the smallest resulting in tighter 95% confidence intervals for the expected estimates we were provided. This design in close to option 3, yet we prefer having a slightly smaller SSU if we can increase the number of PSUs sampled since this gives us a cost efficiency.\
 
 The client has also provided other new information: the estimated size of the target population is N = 830,138. Given this population size and your overall sample size (n) under the new optimum subsample size computed above, what is your overall working sampling fraction (f)? Does it seem like finite population corrections will be necessary in your sampling variances if you choose to perform SRSWOR at some point?
 
 ```{r}
 # total pop
 N <- 830138
+
 # optimum n
 total_nm <- 4721
 samp_frac <- total_nm / N; samp_frac
 
-MI_school_samples |>  select(Outcome, expect_mean, s_sqrd, roh, 
+MI_school_samples |>  select(Outcome, expect_mean, roh, 
                              m_opt, n_opt, total_nm) |> 
   # we can print projected total cost for n=50
   mutate(m_opt = m_opt[2], # optimum m from first row
@@ -317,20 +323,22 @@ MI_school_samples |>  select(Outcome, expect_mean, s_sqrd, roh,
          total_nm = m_opt*n_opt,
          # calculate new deff
          deff_new = 1 + (m_opt-1) * roh,
-         # calcualte SRS variance
-         var_srs =(1 - samp_frac) * s_sqrd / (total_nm - 1),
+         # recalcualte element variance
+         var = c(.24, .1275, 9),
+         # calcualte SRS variance with sampl_fraction
+         var_srs =(1 - samp_frac) * var / (total_nm - 1),
          # calculate complex design variance
          var_crs = var_srs * deff_new,
          # compute confidence intervals
          se = sqrt(var_crs),
          lower = expect_mean  - 1.96*se,
-         upper = expect_mean + 1.96*se) |>
-  select(Outcome, var_srs, var_crs, se, lower, upper) |> 
-  mutate_at(2:6, round, 5) |> 
+         upper = expect_mean + 1.96*se ) |>
+  select(Outcome, var_crs, se, lower, upper) |> 
+  mutate_at(2:4, round, 5) |> 
   kable()
 ```
 
-Our overall sampling fraction is .0057. In examining the SRS and complex design variances, and recalculating the expected standard error and 95% confidence interval, it does not appear that accounting for a population correction makes a huge impact, and we suggest it will not be necessary in our sampling variance for an SRSWOR design.
+Our overall sampling fraction is .0057. In examining the complex design variances, and recalculating the expected standard error and 95% confidence interva given the sampling fractionl, it does not appear that accounting for a population correction makes a huge impact, and we suggest it will not be necessary in our sampling variance for an SRSWOR design
 
 \newpage
 
@@ -338,74 +346,153 @@ Our overall sampling fraction is .0057. In examining the SRS and complex design 
 
 Assume that you will decide to allocate your final computed $n_{opt}$ number of clusters to each of the nine project strata based on the proportions of the total number of students in the population in each stratum (i.e., if 20% of the population of students comes from Region 1, you would sample 20% of your clusters from that region). Describe the first-stage sampling fractions for each stratum, where the total number of schools to sample at the first stage in each stratum is defined by your proportionate allocation of the $n_{opt}$ clusters.
 
--   Using the proportionate allocation by strata computed earlier, we assign and add cluster allocation by stratum.
-
-```{r}
-# Given values
-n_opt <- 87
-m_opt <- 53
-
-
-# Compute proportional allocation of clusters to each stratum
-strata_Prop_allocate <- strata_Prop_allocate |> 
-  # Ensure at least 1 cluster per
-  mutate(clusters_allocated = pmax(1, round(n_opt * prop_allocation)))         
-
-strata_Prop_allocate |> 
-  kable()
-```
-
 Next your team should extend your design to consider stratified PPeS selection of schools from each of the nine strata at the first stage of your sample design.
 
 You have been provided with a sampling frame that lists the schools within each region. Given the information on the sampling frame, how might you sort this list to achieve implicit stratification within the regions? You can treat the overall student count from a previous year (tot_all) as the measure of size for the PPeS sampling. Given this information, compute your zone size for systematic PPeS sampling within each of the nine strata (regions), and proceed with systematic selection based on fractional intervals to select the allocated number of schools within each stratum using PPeS sampling. What is your first-stage sampling fraction within each of the nine strata?
 
-Now, suppose that you have the entire list of sampled schools from a given stratum. As outlined in the project description, the client wishes to work under a paired selection model for estimation of sampling variance. How would you form pseudo-strata to meet this request, based on your systematic sampling within each first-stage stratum? We aren’t ready to write the estimation methods section yet, but you can describe this general process as a part of the description of your first-stage sampling.
+-   Using the proportionate allocation by strata computed earlier, we assign and add cluster allocation by stratum by $n_{opt} \times prop-allocation$.
 
-In future weeks, we will work on determining the sampling rates within each of the sampled schools to maintain epsem across the nine strata. For now, your focus should be on refining the description of the first-stage sampling process.
+-   nonresponse adjustment is achieved by taking our optimum values and adjusting them by the amount of respondents that are likely to complete the survey.
 
--   We also calculate the first stage probability of selection using the equation below, which we take the sum of MOS in each strata multiplied by the number of schools to be selected, divided by the total MOS.
+-   We also calculate the zone size which we label as k_h as:
 
-$$
-\frac{nMOS_i}{\sum_t MOS_i}
-$$
+    $$
+    k_h = \frac{nMOS_i}{\sum_t MOS_i}
+    $$
 
 ```{r}
-# Implement systematic PPeS sampling
-set.seed(123)
 
-school_frame <- school_frame |> 
-  # compute 1st stage
-  mutate( pik =  pmin(1, ( (n_opt * tot_all) / sum(tot_all) )), 
-          selected  = UPsystematic(pik))
+set.seed(9999) 
 
-sampled_schools <- school_frame |> 
-  filter(selected == 1) |> arrange(tot_all)
+# response rates
+school_rr <- .30
+student_rr <- .70
+# Given values
+n_opt <- round(87 / school_rr)
+m_opt <- round(53 / student_rr)
 
-sampled_schools |> 
-  select(Region, BNAME, tot_all) |>
-  rename(MOS = tot_all) |> 
-  arrange(Region) |> 
+
+# Compute proportional allocation of clusters to each stratum
+region_summary <- strata_Prop_allocate |> 
+  # Ensure at least 1 cluster per
+  mutate(n_h = round(n_opt * prop_allocation),
+           # we need to adjust the last n_h to get an exact 290
+         n_h = ifelse(n_h == 131, n_h-1, n_h)) |> 
+  mutate(N_h = as.double(N_h)) |> 
+  group_by(Region) |> 
+  reframe(across(where(is.double), ~ sum(.x))) |> 
+  mutate(
+         f_h = n_h / N_h,     # sampling fraction
+         k_h =  round(M_h / n_h)) |>    # zone size
+  # create random start values
+  rowwise() |> 
+  mutate(RN = sample(1:k_h, 1)) |> 
+  ungroup()
+
+
+region_summary |> 
   kable()
+```
+
+![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAaCAYAAADFTB7LAAAAcElEQVR4Xu3OwQmAQAxE0bClWYCW5N06tM6V2YPg5CjoF/JhLoHAi6iqn9eOefUbqrYvHY0cQDLyAlKRNyARmYA0ZMLRkAlGQyaU72tkAtlim7r/vJqDUDjlKBROOQyFU2icQuMUGqfQuBEaV1XPOwEx96nYACK8+wAAAABJRU5ErkJggg== "Run Current Chunk")
+
+-   To achieve implicit stratification we order the school list sorted by size of student in each region. To compute zone size we use
+
+```{r}
+school_frame_sorted <- school_frame |> 
+  arrange(Region, desc(tot_all))
+
+min_MOS <- m_opt
+
+
+RN_sample <- map(1:nrow(region_summary), function(x){
+  
+  round(seq(region_summary$RN[x], 
+      region_summary$M_h[x], 
+      region_summary$k_h[x]))
+})
+
 
 ```
 
--   We sort selected schools by MOS size and collapse neighboring zones to create pseudo strata that have more than one selection. We print the first one here as an example.
+```{r}
+# we link the selected blocks
+dat <- school_frame_sorted |>
+  group_by(Region) |> 
+  mutate(
+    # assing ids
+    id = row_number(),
+    # flag if minimum MOS not met
+    min_m_req = ifelse(tot_all >= min_MOS, 1 , 0),
+    # create links and convert to clusters
+    linking = lead(min_m_req, default=1),
+    # assign clustering
+    cluster = cumsum(lag(linking, default=1)),
+    # add cumulative counts
+    cumulative_max = cumsum(tot_all),
+    cumulative_min = 1 + lag(cumulative_max, default = 0)    )
+```
 
 ```{r}
+dat_selected <- map_dfr(1:9, function(x){
+  
+  dat |> 
+    filter(Region %in% x) |>  
+    add_column(RN_sample[[x]] |> tibble() |> data.table::transpose()) |>
+    # create flag for blocks that are selected
+    mutate(selected =
+             as.numeric(if_any(starts_with("V"), ~
+                        between(.x, cumulative_min, cumulative_max)))) |>
+    # drop select population elements
+    select(-starts_with("V"))
+  
+})
+```
 
-num_pairs <- floor(nrow(sampled_schools) / 2)
+```{r}
+dat_linked <- dat_selected |>
+  group_by(Region) |> 
+  mutate(
+    # flag if minimum MOS not met
+    min_n_req = ifelse(tot_all >= min_MOS, 1 , 0),
+    # create links and convert to clusters
+    linking = lead(min_n_req, default=1),
+    # assign clustering
+    cluster = cumsum(lag(linking, default=1))) |> 
+  ungroup()
+```
 
-# create sampled pairs
-paired_strata <- sampled_schools |> 
-  mutate(group_id = rep(1:num_pairs, each = 2,
-                        length.out = nrow(sampled_schools))) |> 
-  group_by(group_id) |> 
-  group_split()
+```{r}
+# show cluster of blocks selected, total HUs
+sample_selected <- map_dfr(1:9, function(x){
+  
+   linkage = dat_linked |> 
+    filter(Region %in%  x, selected==1) |> 
+    select(Region, cluster) |> 
+    mutate(Selection = RN_sample[[x]]) |> 
+     pull(cluster)
 
-paired_strata[[1]] |> 
-  select(Region, BNAME, tot_all) |>
-  kable()
 
+  dat = dat_linked |>
+  filter(Region %in% x,
+         cluster %in% linkage) |>
+  # now we link blocks within clusters
+  group_by(cluster) |>
+  # start clusters at 1
+  mutate(cluster = cur_group_id()) |>
+  # start with last id to link backwards
+  arrange(desc(id)) 
+  return(dat) 
+}) |> 
+  ungroup() |> 
+  # combine region 1 with 2
+  mutate(Region = ifelse(Region==1, 2, Region))
+  
+# save data to github
+write_xlsx(sample_selected, 
+           "~/work/d/SURV625project/data/sample_selected.xlsx")
+  
+ 
 ```
 
 \newpage
@@ -423,20 +510,6 @@ f_h = \frac{n_h MOS_{hi} }{\sum,_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}}
 $$
 
 BELOW CANNOT BE RIGHT, WE GET THE SAME M SIZE FOR EACH STRATA
-
-```{r}
-# overall sampling fraction
-f <- samp_frac # calculated earlier .0057
-
-school_frame |> 
-  group_by(Region) |> 
-  reframe(schools = n(), students = sum(tot_all)) |> 
-  # compute sampling rates
-  mutate(f_h = f * (N / (n_opt * students)),
-         # compute subsample size
-         n_students =   f_h * students) |> 
-  kable()
-```
 
 2.  Do each of the schools that you sampled in a given region have the minimum sufficient size, given the stratum-specific subsample sizes computed in Task #1? Do subsequent schools on the list have the minimum sufficient size? If not, what will you do?
 
