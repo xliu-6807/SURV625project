@@ -12,7 +12,7 @@ format: pdf
 ---
 
 ```{r setup, include=FALSE}
-pacman::p_load(readxl, writexl, MESS, knitr, sampling, tidyverse)
+pacman::p_load(readxl, writexl, MESS, viridis, ggthemes, knitr, sampling, tidyverse)
 
 options(scipen=999)
 ```
@@ -135,6 +135,21 @@ strata_Prop_allocate |>
 
 ```
 
+```{r}
+strata_Prop_allocate |> 
+  mutate(Region = factor(Region)) |> 
+  ggplot(aes(x=Region, y=prop_allocation)) +
+  geom_col(position="dodge", fill="dodgerblue", alpha=.85) +  
+  coord_flip() +
+  guides(fill=guide_legend(title="", reverse = TRUE)) +
+  labs(
+    title = "Figure 1. Proportionate Allocation Plan Across Nine Strata",
+    x = "Regions",
+    y = "Proportion"
+  ) +
+  theme_hc()
+```
+
 \newpage
 
 ## **SM 625: Week 6 Sampling Project Notes**
@@ -205,7 +220,7 @@ MI_school_samples <- MI_school_samples |>
      # compute total SSU
     total_nm = m_opt * n_opt)
 
-MI_school_samples |> select(Outcome, roh, m_opt, n_opt) |> 
+MI_school_samples |> select(Outcome, m_opt, n_opt) |> 
   kable()
 ```
 
@@ -217,10 +232,13 @@ MI_school_samples |> select(Outcome, roh, m_opt, n_opt) |>
 ```{r}
 
 MI_school_samples |> 
-  select(Outcome, roh, m_opt, n_opt, deff_new, total_nm) |> 
-  mutate(projected_cost = (c_n * n_opt) + (c_m * n_opt * m_opt),
-         projected_cost = scales::dollar(projected_cost)) |> 
-  mutate_at(2:6, round, 4) |> 
+  select(Outcome, m_opt, n_opt, deff_new) |> 
+  mutate_at(2:3, floor) |> 
+  mutate(total_nm = n_opt*m_opt,
+         cost = (c_n * n_opt) + (c_m * n_opt * m_opt),
+         cost = scales::dollar(cost),
+         Outcome = ifelse(Outcome == "age_approached_to_smoke", 
+                          "age_smoke", Outcome)) |>
   kable()
 ```
 
@@ -293,8 +311,8 @@ map(seq(1,3), function(x){
          upper = expect_mean + 1.96*se,
         # flag if var_crs is lower or = to desired sampling var
          var_ck = ifelse(var_crs <= V, "yes", "no")) |>
-    mutate_at(3:5, round, 4) |> 
   select(Outcome, expect_mean, se, lower, upper, var_ck) |> 
+  mutate_at(3:5, round, 4) |> 
   kable()
   
 }) |> 
@@ -387,29 +405,30 @@ region_summary <- strata_Prop_allocate |>
   # create random start values
   rowwise() |> 
   mutate(RN = sample(1:k_h, 1)) |> 
-  ungroup()
+  ungroup() |> 
+  mutate_at(vars(prop_allocation, f_h), round, 3)
 
 
 region_summary |> 
   kable()
 ```
 
-![](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAaCAYAAADFTB7LAAAAcElEQVR4Xu3OwQmAQAxE0bClWYCW5N06tM6V2YPg5CjoF/JhLoHAi6iqn9eOefUbqrYvHY0cQDLyAlKRNyARmYA0ZMLRkAlGQyaU72tkAtlim7r/vJqDUDjlKBROOQyFU2icQuMUGqfQuBEaV1XPOwEx96nYACK8+wAAAABJRU5ErkJggg== "Run Current Chunk")
-
 -   To achieve implicit stratification we order the school list sorted by size of student in each region. To compute zone size we use
 
 ```{r}
+# sort list of schools by student size
 school_frame_sorted <- school_frame |> 
   arrange(Region, desc(tot_all))
 
 min_MOS <- m_opt
 
-
+# create vectors of selection values for each stratum 
 RN_sample <- map(1:nrow(region_summary), function(x){
   
-  round(seq(region_summary$RN[x], 
-      region_summary$M_h[x], 
-      region_summary$k_h[x]))
+  # pass table created in last code chunk
+  round(seq(region_summary$RN[x], # random start
+      region_summary$M_h[x], # total number of students
+      region_summary$k_h[x])) # k sampling interval
 })
 
 
@@ -418,7 +437,7 @@ RN_sample <- map(1:nrow(region_summary), function(x){
 ```{r}
 # we link the selected blocks
 dat <- school_frame_sorted |>
-  group_by(Region) |> 
+  group_by(Region) |>
   mutate(
     # assing ids
     id = row_number(),
@@ -430,10 +449,11 @@ dat <- school_frame_sorted |>
     cluster = cumsum(lag(linking, default=1)),
     # add cumulative counts
     cumulative_max = cumsum(tot_all),
-    cumulative_min = 1 + lag(cumulative_max, default = 0)    )
+    cumulative_min = 1 + lag(cumulative_max, default = 0) )
 ```
 
 ```{r}
+# for each region loop through RN_sample & assign selection to schools
 dat_selected <- map_dfr(1:9, function(x){
   
   dat |> 
@@ -450,6 +470,7 @@ dat_selected <- map_dfr(1:9, function(x){
 ```
 
 ```{r}
+# this is where schools are linked
 dat_linked <- dat_selected |>
   group_by(Region) |> 
   mutate(
@@ -466,33 +487,88 @@ dat_linked <- dat_selected |>
 # show cluster of blocks selected, total HUs
 sample_selected <- map_dfr(1:9, function(x){
   
-   linkage = dat_linked |> 
-    filter(Region %in%  x, selected==1) |> 
+  linkage = dat_linked |> 
+    filter(Region %in% x, selected == 1) |> 
     select(Region, cluster) |> 
     mutate(Selection = RN_sample[[x]]) |> 
-     pull(cluster)
-
+    pull(cluster)
 
   dat = dat_linked |>
-  filter(Region %in% x,
-         cluster %in% linkage) |>
-  # now we link blocks within clusters
-  group_by(cluster) |>
-  # start clusters at 1
-  mutate(cluster = cur_group_id()) |>
-  # start with last id to link backwards
-  arrange(desc(id)) 
+    filter(Region %in% x,
+           cluster %in% linkage) |>
+    mutate(MOS = as.numeric(tot_all)) |>
+    group_by(cluster) |>
+    mutate(
+      cluster = cur_group_id(),
+      total_MOS = sum(MOS, na.rm = TRUE)
+    ) |>
+    arrange(desc(id))  # optional: sort within cluster
+
+  if (x == 1) {
+    # get unique cluster id from Region 1
+    first_cluster_id <- dat |> 
+      filter(Region == 1) |> 
+      pull(cluster) |> 
+      unique() |> 
+      min()
+
+    # filter the first cluster
+    first_cluster <- dat |> filter(cluster == first_cluster_id)
+
+    # split it into two halves (or roughly)
+    n <- nrow(first_cluster)
+    first_half <- first_cluster[1:floor(n/2), ] |>
+      mutate(
+        SECU = "1A",
+        SECU_MOS = sum(MOS/2, na.rm = TRUE)
+      )
+    second_half <- first_cluster[(floor(n/2) + 1):n, ] |>
+      mutate(
+        SECU = "1B",
+        SECU_MOS = sum(MOS/2, na.rm = TRUE)
+      )
+
+    # everything else from Region 1
+    remaining <- dat |> filter(cluster != first_cluster_id) |>
+      mutate(SECU = as.character(cluster),
+             SECU_MOS = total_MOS)
+
+    # combine all Region 1 units
+    dat <- bind_rows(first_half, second_half, remaining)
+  } else {
+    dat <- dat |>
+      mutate(
+        SECU = as.character(cluster),
+        SECU_MOS = total_MOS
+      )
+  }
+
   return(dat) 
 }) |> 
-  ungroup() |> 
-  # combine region 1 with 2
-  mutate(Region = ifelse(Region==1, 2, Region))
-  
+  ungroup()
+
 # save data to github
 write_xlsx(sample_selected, 
            "~/work/d/SURV625project/data/sample_selected.xlsx")
-  
- 
+
+
+```
+
+```{r}
+# Form Pseudo-Strata for Paired Selection Model
+pseudo_strata_df <- sample_selected |> 
+  group_by(Region) |> 
+  arrange(desc(MOS)) |>   # optionally sort by size for pairing
+  mutate(row_in_group = row_number(),
+         pseudo_stratum_id = paste0("R", Region, "_P", ceiling(row_in_group / 2))) |> 
+  ungroup()
+
+# how many pseudo strata in each region?
+pseudo_strata_df |>  
+  group_by(Region) |> 
+  distinct(pseudo_stratum_id) |> 
+  count() |>  
+  kable()
 ```
 
 \newpage
@@ -509,14 +585,290 @@ $$
 f_h = \frac{n_h MOS_{hi} }{\sum,_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}} 
 $$
 
-BELOW CANNOT BE RIGHT, WE GET THE SAME M SIZE FOR EACH STRATA
+```{r}
+# Required Students per School (m_h_star) to Maintain EPSEM:
+region_summary<- region_summary |> 
+  mutate(m_h_star=c(samp_frac*k_h))
+
+region_summary |> kable()
+```
 
 2.  Do each of the schools that you sampled in a given region have the minimum sufficient size, given the stratum-specific subsample sizes computed in Task #1? Do subsequent schools on the list have the minimum sufficient size? If not, what will you do?
 
-    2.  School 07809 does not meet the requirement of 54 students. The next school in sequence does not meet the minimum requirement with only 29 student, but the next school in sequence does meet the requirement. We will need to link these two schools.
+```{r}
+region_min_MOS <- region_summary |>
+  group_by(Region) |>
+  # Total response rate = 0.21, expanded sample
+  mutate(min_MOS2 = ceiling(m_h_star / (0.3 * 0.7)) ) 
 
-3.  Begin to describe how you will physically select the subsample of students within a given sampled school (or set of linked schools). What will your second-stage sampling rate be for a given school within a given stratum? How will you acquire the updated rosters from each school? What technique will you use to select the sample at the specified second-stage rate?
 
-    2.  The linking is done by first selecting $n_{opt}$ schools from each strata. When the next school on the list do not meet the sufficient size required of $m_{opt}$ student size we move down the list until the first school that meets the minimum requirement is achieved. For all the schools that did not meet the requirement they are cumulated backwards until a linked school of minimum sufficient size is created. We do this process for all the schools initially selected.
+# Processing schools by region and generating clusters of links
+linked_schools <- sample_selected |>
+  left_join(region_min_MOS, by = "Region") |> # Combined Minimum MOS
+  group_by(Region) |>
+  arrange(desc(tot_all)) |> # Listed in descending order of MOS (prioritizing large schools
+  mutate(
+    # Initialize cumulative MOS and link tags
+    cumulative_mos = cumsum(tot_all),
+    need_link = if_else(tot_all < min_MOS2, 1, 0),
+    # Dynamic generation of cluster IDs: linking when cumulative MOS is insufficient
+    cluster_id = cumsum(
+      if_else(
+        cumulative_mos - lag(cumulative_mos, default = 0) >= min_MOS2 | row_number() == 1,
+        1, 0
+      )
+    )
+  ) |>
+  ungroup()
+
+# how many linked clusters by region
+linked_schools |> 
+  group_by(Region) |> 
+  count(cluster_id) |> 
+  count() |> 
+  kable()
+
+```
+
+```{r}
+
+# Summarize the total MOS for each cluster and check for compliance
+cluster_summary <- linked_schools |>
+  group_by(Region, cluster_id) |>
+  summarise(
+    total_mos = sum(tot_all),
+    schools = toString(BCODE),
+    min_MOS2 = first(min_MOS2),
+    .groups = "drop"
+  ) |>
+  mutate(
+    sufficient = if_else(total_mos >= min_MOS2, "Yes", "No")
+  )
+# Output clusters that need to be relinked (total MOS still insufficient)
+clusters_to_relink <- cluster_summary |> filter(sufficient == "No")
+
+# Recursive linking until all clusters are up to standard
+while (nrow(clusters_to_relink) > 0) {
+  linked_schools <- linked_schools |>
+    group_by(Region) |>
+    mutate(
+      cluster_id = if_else(
+        cluster_id %in% clusters_to_relink$cluster_id,
+        cluster_id + 1, # Merge to the next cluster
+        cluster_id)
+      ) |>
+    ungroup()
+  
+  # Summary of recomputation clusters
+  cluster_summary <- linked_schools |>
+    group_by(Region, cluster_id) |>
+    summarise(
+      total_mos = sum(tot_all),
+      schools = toString(BCODE),
+      min_MOS2 = first(min_MOS2),
+      .groups = "drop"
+    ) |>
+    mutate(sufficient = if_else(total_mos >= min_MOS2, "Yes", "No"))
+  clusters_to_relink <- cluster_summary |> filter(sufficient == "No")
+}
+final_clusters <- linked_schools |>
+  group_by(Region, cluster_id) |>
+  summarise(
+    linked_schools = paste(BCODE, collapse = ", "),
+    total_mos = sum(tot_all),
+    min_MOS2 = first(min_MOS2),
+    .groups = "drop"
+  ) |>
+  mutate(
+    status = if_else(total_mos >= min_MOS2, "Valid", "Invalid")
+  )
+# Print results
+final_clusters |> 
+  select(Region:total_mos) |> 
+  kable(col.names = c("h", "id", "n", "m"))
+```
+
+**Selection Technique**:
+
+Systematic sampling is a suitable technique. For school $h_i$
+
+-   Calculate the sampling interval $k_h = MOS_{hi} / n_h$.
+
+-   Choose a random starting number between $1$ and $k_{hi}$.
+
+-   Select the student at the random start position and every $k_{hi}'th$ student thereafter from the ordered roster.
+
+-   If schools are linked due to insufficient numbers, the rosters need to be combined and sampled uniformly.
+
+-   Record unresponsive students and report adjusted weights.
 
 4.  Write down the overall sampling fraction based on the stratified PPeS design, indicating the overall probability of inclusion for a given student, from a given school (or linked set of schools), in a given stratum. Be careful with notation. Keep in mind that the MOS values used for the sampled schools at the first stage and the denominator at the second stage (Did you sample a single school? Or a linked set of schools?) will depend on your response to Task #2 above
+
+- The overall sampling fraction is $f = \frac{n}{N} = \frac{4,721}{830138} = .0057$
+
+- The inclusion probability for a given student is $P_{hi} = \frac{a_h \times MOS_{hi}}{MOS_h} \times \frac{m_h}{MOS_{hi}} = \frac{a_h\times m_h}{MOS_h}$.
+
+```{r}
+linked_schools <- linked_schools |> 
+  group_by(Region) |>
+  mutate(P_h = n_h*tot_all/M_h,
+         P_i=m_h_star/tot_all,
+         Prob=P_h*P_i,
+         epsem_check = abs(Prob - mean(Prob)) < 0.000001)
+
+stopifnot(all(linked_schools$epsem_check))
+
+# check for false
+linked_schools |> 
+  count(epsem_check) |> 
+  knitr::kable()
+```
+
+
+\newpage
+
+## Week 13
+
+1.  Based on the final sample design that your team has developed, formulate a sampling error calculation model that users of your data will be able to employ to estimate sampling variance. That is, what stratum codes will you provide to users? How will you form sampling error computation units (SECUs)? How many SECUs will there be per stratum? What are expected sample sizes per SECU?
+
+```{r}
+# Week 13 - Q1: Sampling Error Calculation Model
+
+
+# Inputs based on project design
+a_select <- 290 # n_opt w/ RR adjustment
+b_star <- 53  # m_opt w/o RR adjustment      
+n_strata_var <- a_select / 2 
+n_regions <- 9      
+
+# Each pair of schools forms one variance stratum
+# Each school is one SECU
+variance_strata <- tibble(
+  school_id = 1:a_select,
+  var_stratum_id = rep(1:n_strata_var, each = 2),
+  SECU_id = 1:a_select,
+  expected_sample_size = b_star
+)
+
+# Summary table for documentation
+summary_table <- tibble(
+  Description = c(
+    "Total Schools Selected (a_select)",
+    "Explicit Strata (Regions)",
+    "Variance Estimation Strata (Paired PSUs)",
+    "SECUs per Variance Stratum",
+    "Expected Sample Size per SECU (b*)"
+  ),
+  Value = c(
+    a_select,
+    n_regions,
+    n_strata_var,
+    2,
+    b_star
+  )
+)
+
+kable(summary_table, align = "lc")
+kable(head(variance_strata))
+#kable(variance_strata)
+```
+
+2.  Describe the variance estimation procedures that one would employ to form a confidence interval for one of the three key descriptive parameters. This should build on your proposed SECUs from the first task. How many degrees of freedom will your sampling error calculation model afford? In addition, write the formula for one of the estimated proportions or means; are weights necessary in forming this estimator, given your sample design? That is, is your design epsem, or will weights be needed to compensate for unequal probabilities of selection?
+
+```{r, results="asis"}
+a_select <- 290              
+df <- a_select / 2           # Degrees of freedom = number of variance strata
+num_strata <- df
+
+
+# Simulate SECU-level estimates for a descriptive proportion (e.g., smoked a cigarette)
+set.seed(9999)
+p_secu_1 <- runif(num_strata, 0.22, 0.28)  # SECU 1 estimates
+p_secu_2 <- runif(num_strata, 0.22, 0.28)  # SECU 2 estimates
+
+
+# Paired Difference Variance Estimation
+diffs <- p_secu_1 - p_secu_2
+var_estimate <- mean(diffs^2) / 2         # Variance across pairs
+se_estimate <- sqrt(var_estimate)
+
+# Confidence interval (95%)
+t_crit <- qt(0.975, df = df)
+estimate_mean <- mean(c(p_secu_1, p_secu_2))
+CI_lower <- estimate_mean - t_crit * se_estimate
+CI_upper <- estimate_mean + t_crit * se_estimate
+
+```
+
+\newpage
+
+```{r, echo=FALSE}
+
+# -------------------------------
+# Output: Variance and CI
+# -------------------------------
+cat("📏 Degrees of Freedom (df):", df, "\n")
+cat("📉 Standard Error (SE):", round(se_estimate, 5), "\n")
+cat("📊 95% Confidence Interval for estimated proportion:\n")
+cat("   [", round(CI_lower, 4), ",", round(CI_upper, 4), "]\n\n")
+
+# -------------------------------
+# Estimator Formula Explanation
+# -------------------------------
+cat("🧮 Estimator Formula for Proportion:\n")
+cat("   p̂ = sum(w_hij * y_hij) / sum(w_hij)\n")
+cat("   where:\n")
+cat("     y_hij = 1 if student j in school i of stratum h has the trait 
+    \n(e.g., smoked), 0 otherwise\n")
+cat("     w_hij = final weight for student hij (includes selection probability,
+             \nnonresponse, etc.)\n\n")
+
+# -------------------------------
+# Weighting Explanation (EPSEM or Not)
+# -------------------------------
+cat("⚖️ Are weights needed? YES.\n")
+cat("1. Although the design aimed for EPSEM, weights are necessary in practice.")
+cat("2. Adjustments are needed for:\n")
+cat("   - School-level nonresponse (30%)\n")
+cat("   - Student-level nonresponse (70%)\n")
+cat("3. Weights also adjust for second-stage linking or other deviations during implementation.\n")
+
+```
+
+\newpage
+
+3.  Keep in mind the client’s request for estimates and inference related to a 20% subclass. Will confidence intervals for the subclass be formed in the same way? Are your SECUs large enough to accommodate this request?
+
+```{r}
+total_secus <- a_select            # Number of SECUs (schools)
+expected_b_star <- b_star         # Expected completes per SECU
+subclass_pct <- 0.20          # Subclass proportion (20%)
+df <- total_secus / 2         # Degrees of freedom remains the same
+
+# Estimate expected subclass size per SECU
+expected_subclass_per_secu <- expected_b_star * subclass_pct
+
+```
+
+```{r, echo=FALSE}
+
+# Output Summary
+cat("🔍 Subclass Estimation for 20% Group\n\n")
+
+# Confidence Interval Method
+cat("✅ Confidence Intervals:\n")
+cat("CI for subclass estimates can be formed using the same paired difference method.\n")
+cat("Degrees of Freedom remains:", df, "\n\n")
+
+# SECU size check
+cat("📏 SECU Size Check:\n")
+cat("Expected sample size per SECU (b*):", expected_b_star, "\n")
+cat("Estimated subclass members per SECU:", round(expected_subclass_per_secu, 1), "\n")
+
+if (expected_subclass_per_secu >= 10) {
+  cat("✅ This is generally sufficient for stable variance estimation at the subclass level.\n")
+} else {
+  cat("⚠️ Caution: Subclass sample size per SECU may be small for reliable inference.\n")
+}
+
+```
