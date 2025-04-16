@@ -756,7 +756,7 @@ $m_{hi} = f \cdot M_{hi} = 0.0057 \cdot 242$
 
 $\text{Sampling Rate} = \frac{m_{hi}}{N_{hi}} = \frac{2}{219} $
 
-The actual size is $219$. The sampling rate should be $0.00913242$. The expected actual expected sample size is $2$.
+The actual size is $219$. The sampling rate should be $0.07762557$. The expected actual expected sample size is $17$.
 
 
 
@@ -767,25 +767,29 @@ oneschool <- read.csv("schoolframe.csv")
 MOS_7 <- 242
 ACT_MOS_7 <- nrow(oneschool)
 M_h_7 <- 191992
-mh_7 <- ceiling(f_overall*MOS_7)
-
+m_h_start_7 <- ceiling(16.29896)
 # Step 2: Sampling rate
-sam_rate <- mh_7/ACT_MOS_7
+sam_rate <- m_h_start_7/ACT_MOS_7
 
 
 # Step 2: Calculate sampling interval
-k_interval <- floor(ACT_MOS_7 / mh_7 )
+k_interval <- ACT_MOS_7 / m_h_start_7
+round_k_interval <- k_interval*100000
+round_mos <- 219*100000+99999
+
+
 
 # Step 3: Random start between 1 and interval
 set.seed(123)
-start <- sample(1:k_interval, 1)
+start <- sample(1:round_k_interval, 1)
 
 # Step 4: Select every `interval`-th student starting from `start`
-indices <- seq(start, by = k_interval, length.out = mh_7)
-sampled_students <- oneschool[indices, ]
+indices <- seq(start, by = round_k_interval, length.out = m_h_start_7)
+true_indices <- floor(indices/100000)
+sampled_students <- oneschool[true_indices, ]
 
 # View sampled students
-head(sampled_students)
+sampled_students
 ```
 
 
