@@ -356,7 +356,7 @@ MI_school_samples |>  select(Outcome, expect_mean, roh,
   kable()
 ```
 
-Our overall sampling fraction is .0057. In examining the complex design variances, and recalculating the expected standard error and 95% confidence interva given the sampling fractionl, it does not appear that accounting for a population correction makes a huge impact, and we suggest it will not be necessary in our sampling variance for an SRSWOR design
+Our overall sampling fraction is .0057. In examining the complex design variances, and recalculating the expected standard error and 95% confidence interval given the sampling fraction, it does not appear that accounting for a population correction makes a huge impact, and we suggest it will not be necessary in our sampling variance for an SRSWOR design
 
 \newpage
 
@@ -368,7 +368,7 @@ Next your team should extend your design to consider stratified PPeS selection o
 
 You have been provided with a sampling frame that lists the schools within each region. Given the information on the sampling frame, how might you sort this list to achieve implicit stratification within the regions? You can treat the overall student count from a previous year (tot_all) as the measure of size for the PPeS sampling. Given this information, compute your zone size for systematic PPeS sampling within each of the nine strata (regions), and proceed with systematic selection based on fractional intervals to select the allocated number of schools within each stratum using PPeS sampling. What is your first-stage sampling fraction within each of the nine strata?
 
--   Using the proportionate allocation by strata computed earlier, we assign and add cluster allocation by stratum by $n_{opt} \times prop-allocation$.
+-   Using the proportionate allocation by strata computed earlier, we assign and add cluster allocation by stratum by $n_{opt} \times prop\_allocation$.
 
 -   nonresponse adjustment is achieved by taking our optimum values and adjusting them by the amount of respondents that are likely to complete the survey.
 
@@ -410,6 +410,7 @@ region_summary <- strata_Prop_allocate |>
 
 
 region_summary |> 
+  select(Region, prop_allocation, n_h, k_h) |> 
   kable()
 ```
 
@@ -702,11 +703,13 @@ Systematic sampling is a suitable technique. For school $h_i$
 
 -   Record unresponsive students and report adjusted weights.
 
+\
+
 4.  Write down the overall sampling fraction based on the stratified PPeS design, indicating the overall probability of inclusion for a given student, from a given school (or linked set of schools), in a given stratum. Be careful with notation. Keep in mind that the MOS values used for the sampled schools at the first stage and the denominator at the second stage (Did you sample a single school? Or a linked set of schools?) will depend on your response to Task #2 above
 
-- The overall sampling fraction is $f = \frac{n}{N} = \frac{4,721}{830138} = .0057$
+-   The overall sampling fraction is $f = \frac{n}{N} = \frac{4,721}{830138} = .0057$
 
-- The inclusion probability for a given student is $P_{hi} = \frac{a_h \times MOS_{hi}}{MOS_h} \times \frac{m_h}{MOS_{hi}} = \frac{a_h\times m_h}{MOS_h}$.
+-   The inclusion probability for a given student is $P_{hi} = \frac{a_h \times MOS_{hi}}{MOS_h} \times \frac{m_h}{MOS_{hi}} = \frac{a_h\times m_h}{MOS_h}$.
 
 ```{r}
 linked_schools <- linked_schools |> 
@@ -723,7 +726,6 @@ linked_schools |>
   count(epsem_check) |> 
   knitr::kable()
 ```
-
 
 \newpage
 
