@@ -614,12 +614,6 @@ final_clusters <- linked_schools %>%
 
 # Print results
 print(final_clusters)
-
-linked_schools <- linked_schools %>%
-  left_join(
-    cluster_summary %>% select(Region, cluster_id, total_mos),
-    by = c("Region", "cluster_id")
-  )
 ```
 
 ```{r}
@@ -658,6 +652,12 @@ Systematic sampling is a suitable technique. For school hi:
     The probability of of inclusion for a given student is$P_{hi} = \frac{a_h*MoS_{hi}} {MoS_h} * \frac{m_h} {MoS_hi}= \frac{a_h*m_h} {MoS_h}$
 
 ```{r}
+linked_schools <- linked_schools %>%
+  left_join(
+    cluster_summary %>% select(Region, cluster_id, total_mos),
+    by = c("Region", "cluster_id")
+  )
+
 linked_schools<- linked_schools%>% 
   group_by(Region)%>%
   mutate(P_h = n_h*total_mos/M_h,
