@@ -435,10 +435,9 @@ region_summary |>
 ```{r}
 # sort list of schools by student size
 school_frame_sorted <- school_frame |> 
-  mutate(middle = sum(g7_totl, g8_totl),
-         hs = sum(g9_totl, g10_totl, g11_totl, g12_totl)) |> 
-  arrange(middle, hs) |> 
-  select(-middle, -hs)
+  mutate(hs = sum(g9_totl, g10_totl, g11_totl, g12_totl) / tot_all) |> 
+  arrange(desc(hs)) |> 
+  select(-hs)
 
 min_MOS <- m_opt
 
@@ -593,7 +592,7 @@ pseudo_strata_df |>
   distinct(pseudo_stratum_id) |> 
   count() |>  
   ungroup() |> 
-  mutate(Pseudo_strata = c(1, 1, 2, 2, 2, 2, 3, 4, 5)) |> 
+  mutate(Pseudo_strata = c(1, 1, 1, 2, 2, 2, 2, 3, 4)) |> 
   group_by(Pseudo_strata) |> 
   reframe(Secu = sum(n)/2) |> 
   kable()
