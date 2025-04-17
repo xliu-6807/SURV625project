@@ -332,7 +332,12 @@ The client has also provided other new information: the estimated size of the ta
 N <- 830138
 
 # optimum n
-total_nm <- 4721
+total_nm <- MI_school_samples |> 
+  slice(2) |> # second design option 
+  summarise(m_opt*n_opt) |> 
+  pull()
+
+
 samp_frac <- total_nm / N; samp_frac
 
 MI_school_samples |>  select(Outcome, expect_mean, roh, 
@@ -388,16 +393,22 @@ set.seed(9999)
 school_rr <- .30
 student_rr <- .70
 # Given values
-n_opt <- round(87 / school_rr)
-m_opt <- round(53 / student_rr)
+n_opt <- MI_school_samples |> 
+  slice(2) |> select(n_opt) |> 
+  pull() / school_rr
+
+m_opt <- MI_school_samples |> 
+  slice(2) |> select(m_opt) |> 
+  pull() / student_rr
 
 
 # Compute proportional allocation of clusters to each stratum
 region_summary <- strata_Prop_allocate |> 
   # Ensure at least 1 cluster per
-  mutate(n_h = round(n_opt * prop_allocation),
+  mutate(n_h = round(n_opt * prop_allocation)#,
            # we need to adjust the last n_h to get an exact 290
-         n_h = ifelse(n_h == 131, n_h-1, n_h)) |> 
+         #n_h = ifelse(n_h == 131, n_h-1, n_h)
+         ) |> 
   mutate(N_h = as.double(N_h)) |> 
   group_by(Region) |> 
   reframe(across(where(is.double), ~ sum(.x))) |> 
@@ -420,8 +431,8 @@ region_summary |>
 
 ```{r}
 # sort list of schools by student size
-school_frame_sorted <- school_frame #|> 
-  #arrange(Region, desc(tot_all))
+school_frame_sorted <- school_frame |> 
+  arrange(g7_totl, g8_totl, g9_totl, g10_totl, g11_totl, g12_totl)
 
 min_MOS <- m_opt
 
@@ -604,7 +615,7 @@ region_summary |>
 region_min_MOS <- region_summary %>%
   group_by(Region) %>%
   mutate(
-    min_MOS2 = ceiling(m_h_star / (0.3 * 0.7))  # Total response rate = 0.21, expanded sample size
+    min_MOS2 = ceiling(m_h_star /  0.7)  # Total response rate = 0.21, expanded sample size
   )
 
 # Processing schools by region and generating clusters of links
@@ -744,7 +755,7 @@ linked_schools |>
 
 ```{r}
 # Step 1:  Calculate how many students to sample
-f_overall <- 0.0057
+f_overall <- samp_frac
 oneschool <- school_frame
 MOS_7 <- 242
 ACT_MOS_7 <- nrow(oneschool)
@@ -784,28 +795,27 @@ This week, you have been provided with the actual classroom rosters from a rando
 
 Given your plan for within-school sampling developed last week, describe your approach to selecting the sample at your specified rate, and then implement that technique to actually select the sample. You can provide the resulting sample as an Appendix for your final project, but the selection technique needs to be clearly described in the body of your report. Ultimately, your description of this process should enable readers to understand what would happen to select the sample of students within each sampled school.
 
-- Selection Technique: Systematic sampling is a suitable technique. For school hi: • Calculate the sampling interval $k_hi = Mos_{hi} / n_h$ 
-Choose a random starting number between 1 and k_hi. 
+-   Selection Technique: Systematic sampling is a suitable technique. For school hi: • Calculate the sampling interval $k_hi = Mos_{hi} / n_h$ Choose a random starting number between 1 and k_hi.
 
-- Select the student at the random start position and every k_hi-th student thereafter from the ordered roster. 
+-   Select the student at the random start position and every k_hi-th student thereafter from the ordered roster.
 
-- If schools are linked due to insufficient numbers, the rosters need to be combined and sampled uniformly. 
+-   If schools are linked due to insufficient numbers, the rosters need to be combined and sampled uniformly.
 
-- Record unresponsive students and report adjusted weights.
+-   Record unresponsive students and report adjusted weights.
 
-The overall sampling fraction is 
+The overall sampling fraction is
 
 $$
 f = \frac{n}{N} = \frac{4,721}{830138}   = .0057
 $$
 
-The inclusion probability for a given student is 
+The inclusion probability for a given student is
 
 $$
 P_{hi} = \frac{a_h \times MOS_{hi}}{MOS_h} \times \frac{m_h}{MOS_{hi}} = \frac{a_h\times m_h}{MOS_h}
 $$
 
-The number of students to sample from this school (based on MOS) is: 
+The number of students to sample from this school (based on MOS) is:
 
 $$
 m_{hi} = f \cdot M_{hi} = 0.0057 \cdot 242
@@ -859,8 +869,8 @@ sampled_students |>
 
 
 # Inputs based on project design
-a_select <- 290 # n_opt w/ RR adjustment
-b_star <- 53  # m_opt w/o RR adjustment      
+a_select <- n_opt # n_opt
+b_star <- m_opt # m_opt      
 n_strata_var <- a_select / 2 
 n_regions <- 9      
 
