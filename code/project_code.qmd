@@ -340,7 +340,8 @@ total_nm <- MI_school_samples |>
 
 samp_frac <- total_nm / N; samp_frac
 
-MI_school_samples |>  select(Outcome, expect_mean, roh, 
+
+MI_school_samples_table <- MI_school_samples |>  select(Outcome, expect_mean, roh, 
                              m_opt, n_opt, total_nm) |> 
   # we can print projected total cost for n=50
   mutate(m_opt = m_opt[2], # optimum m from first row
@@ -357,7 +358,9 @@ MI_school_samples |>  select(Outcome, expect_mean, roh,
          # compute confidence intervals
          se = sqrt(var_crs),
          lower = expect_mean  - 1.96*se,
-         upper = expect_mean + 1.96*se ) |>
+         upper = expect_mean + 1.96*se ) 
+
+MI_school_samples_table |>
   select(Outcome, var_crs, se, lower, upper) |> 
   mutate_at(2:4, round, 5) |> 
   kable()
@@ -432,7 +435,10 @@ region_summary |>
 ```{r}
 # sort list of schools by student size
 school_frame_sorted <- school_frame |> 
-  arrange(g7_totl, g8_totl, g9_totl, g10_totl, g11_totl, g12_totl)
+  mutate(middle = sum(g7_totl, g8_totl),
+         hs = sum(g9_totl, g10_totl, g11_totl, g12_totl)) |> 
+  arrange(middle, hs) |> 
+  select(-middle, -hs)
 
 min_MOS <- m_opt
 
@@ -561,6 +567,9 @@ sample_selected <- map_dfr(1:9, function(x){
 }) |> 
   ungroup()
 
+sample_selected <- sample_selected |> 
+  slice(-1)
+
 # save data to github
 write_xlsx(sample_selected, 
            "~/work/d/SURV625project/data/sample_selected.xlsx")
@@ -577,11 +586,16 @@ pseudo_strata_df <- sample_selected |>
          pseudo_stratum_id = paste0("R", Region, "_P", ceiling(row_in_group / 2))) |> 
   ungroup()
 
+
 # how many pseudo strata in each region?
 pseudo_strata_df |>  
   group_by(Region) |> 
   distinct(pseudo_stratum_id) |> 
   count() |>  
+  ungroup() |> 
+  mutate(Pseudo_strata = c(1, 1, 2, 2, 2, 2, 3, 4, 5)) |> 
+  group_by(Pseudo_strata) |> 
+  reframe(Secu = sum(n)/2) |> 
   kable()
 ```
 
@@ -622,7 +636,6 @@ region_min_MOS <- region_summary %>%
 linked_schools <- sample_selected %>%
   left_join(region_min_MOS, by = "Region") %>%  # Combined Minimum MOS
   group_by(Region) %>%
-  arrange(desc(tot_all)) %>%  # Listed in descending order of MOS (prioritizing large schools)
   mutate(
     # Initialize cumulative MOS and link tags
     cumulative_mos = cumsum(tot_all),
@@ -642,6 +655,7 @@ linked_schools |>
   group_by(Region) |> 
   count(cluster_id) |> 
   count() |> 
+  ungroup() |> 
   kable()
 
 ```
@@ -746,43 +760,11 @@ stopifnot(all(linked_schools$epsem_check))
 
 # check for false
 linked_schools |> 
-  group_by(Region) |> 
-  reframe(Schools=n(), Students = sum(m_h_star )) |> 
+  distinct(m_h_star, n_h) |> 
+  reframe(Students = sum(m_h_star*n_h)) |> 
+  arrange(Region) |> 
   kable()
-```
 
-## SM 625: Week 11 Sampling Project Notes
-
-```{r}
-# Step 1:  Calculate how many students to sample
-f_overall <- samp_frac
-oneschool <- school_frame
-MOS_7 <- 242
-ACT_MOS_7 <- nrow(oneschool)
-M_h_7 <- 191992
-m_h_start_7 <- ceiling(16.29896)
-# Step 2: Sampling rate
-sam_rate <- m_h_start_7/ACT_MOS_7
-
-
-# Step 2: Calculate sampling interval
-k_interval <- ACT_MOS_7 / m_h_start_7
-round_k_interval <- k_interval*100000
-round_mos <- 219*100000+99999
-
-
-
-# Step 3: Random start between 1 and interval
-set.seed(123)
-start <- sample(1:round_k_interval, 1)
-
-# Step 4: Select every `interval`-th student starting from `start`
-indices <- seq(start, by = round_k_interval, length.out = m_h_start_7)
-true_indices <- floor(indices/100000)
-sampled_students <- oneschool[true_indices, ]
-
-# View sampled students
-sampled_students |> kable()
 ```
 
 \newpage
@@ -830,7 +812,7 @@ The actual size is $219$. The sampling rate should be $0.07762557$. The expected
 ```{r}
 # Step 1:  Calculate how many students to sample
 f_overall <- 0.0057
-oneschool <- school_frame
+oneschool <- sample_selected
 MOS_7 <- 242
 ACT_MOS_7 <- nrow(oneschool)
 M_h_7 <- 191992
@@ -874,13 +856,23 @@ b_star <- m_opt # m_opt
 n_strata_var <- a_select / 2 
 n_regions <- 9      
 
+school_id <- 1:a_select
+
+var_stratum_id <- rep(1:n_strata_var, each = 2)
+# drop last
+var_stratum_id <- var_stratum_id[1:length(school_id)]
+  
+SECU_id <-  1:a_select
+
+expected_sample_size <- b_star
+
 # Each pair of schools forms one variance stratum
 # Each school is one SECU
 variance_strata <- tibble(
-  school_id = 1:a_select,
-  var_stratum_id = rep(1:n_strata_var, each = 2),
-  SECU_id = 1:a_select,
-  expected_sample_size = b_star
+  school_id,
+  var_stratum_id,
+  SECU_id,
+  expected_sample_size,
 )
 
 # Summary table for documentation
@@ -909,15 +901,32 @@ kable(head(variance_strata))
 2.  Describe the variance estimation procedures that one would employ to form a confidence interval for one of the three key descriptive parameters. This should build on your proposed SECUs from the first task. How many degrees of freedom will your sampling error calculation model afford? In addition, write the formula for one of the estimated proportions or means; are weights necessary in forming this estimator, given your sample design? That is, is your design epsem, or will weights be needed to compensate for unequal probabilities of selection?
 
 ```{r, results="asis"}
-a_select <- 290              
 df <- a_select / 2           # Degrees of freedom = number of variance strata
 num_strata <- df
 
 
 # Simulate SECU-level estimates for a descriptive proportion (e.g., smoked a cigarette)
 set.seed(9999)
-p_secu_1 <- runif(num_strata, 0.22, 0.28)  # SECU 1 estimates
-p_secu_2 <- runif(num_strata, 0.22, 0.28)  # SECU 2 estimates
+cig_lower <- MI_school_samples_table |> 
+  slice(1) |> 
+  pull(lower)
+
+cig_upper <- MI_school_samples_table |> 
+  slice(1) |> 
+  pull(upper)
+
+p_secu_1 <- runif(num_strata, cig_lower, cig_upper)  # SECU 1 estimates
+
+mj_lower <- MI_school_samples_table |> 
+  slice(2) |> 
+  pull(lower)
+
+mj_upper <- MI_school_samples_table |> 
+  slice(2) |> 
+  pull(upper)
+
+
+p_secu_2 <- runif(num_strata, mj_lower, mj_upper)  # SECU 2 estimates
 
 
 # Paired Difference Variance Estimation
