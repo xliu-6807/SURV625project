@@ -199,7 +199,7 @@ Recall that the client and the data collection organization estimated that the d
 
 Given this cost information and your estimates of roh for the three different variables of primary interest from last week, compute the optimum subsample size (and the corresponding optimal number of first stage clusters, given the total budget above) for each of the variables.
 
--   We now have budget constraints and denote the cost per cluster as $c_n = \$3,000$ and cost per element as $c_m = \$50$, with a total budget constraint of $C = \$500,000$. Since we know there are $n = 150$ clusters and a total sample size of $7,500$ students.
+-   We now have budget constraints and denote the cost per cluster as $c_n = \$3,000$ and cost per element as $c_m = \$50$, with a total budget constraint of $C = \$500,000$.
 
 -   To compute the optimum $m$ size we use the following equation:
 
@@ -415,9 +415,7 @@ region_summary <- strata_Prop_allocate |>
   mutate(N_h = as.double(N_h)) |> 
   group_by(Region) |> 
   reframe(across(where(is.double), ~ sum(.x))) |> 
-  mutate(
-         f_h = n_h / N_h,     # sampling fraction
-         k_h =  round(M_h / n_h)) |>    # zone size
+  mutate(k_h =  round(M_h / n_h)) |>    # zone size
   # create random start values
   rowwise() |> 
   mutate(RN = sample(1:k_h, 1)) |> 

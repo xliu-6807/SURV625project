@@ -27,7 +27,7 @@ editor:
 knitr::opts_chunk$set(echo = FALSE, message = FALSE, error = FALSE, comment = FALSE)
 
 pacman::p_load(readxl, writexl, MESS, # used for linking
-               viridis, ggthemes, knitr, sampling, tidyverse)
+              kableExtra, viridis, ggthemes, knitr, sampling, tidyverse)
 
 options(scipen=999)
 
@@ -36,61 +36,277 @@ options(scipen=999)
 
 ## Introduction {#sec-intro}
 
-The State of Michigan Department of Education requires data to monitor teenage smoking and drug use, partly to assess compliance with tobacco industry settlements.
+The State of Michigan Department of Education (MDE) requires data to monitor teenage smoking and drug use, partly to assess compliance with tobacco industry settlements.
 This report details the design of a statewide probability sample of Michigan teenagers (enrolled students in grades 7-12) developed to meet the Department's needs.
-The objective was to create a cost-effective sample design capable of producing estimates for key variables with a coefficient of variation (CV) no greater than 0.05, for both the state overall and for specific regions.
+The objective was to create a cost-effective sample design capable of producing estimates for key variables with desired mean and sampling variance for both the state overall and each of the nine official school regions.
 Based on cost considerations and a review of alternatives, a two-stage school-based sample design was chosen by the client.
-This report outlines the overall design, stratification and allocation plan, selection procedures, and estimation methods.
+We outline in this report the overall design, stratification and allocation plan, selection procedures, and estimation methods.
+Our budget consist of a total of \$500,000; each school $C_n$ cost \$3,000 and each student $C_m$ cost \$50 to sample.\
 
-## Overall Design {#sec-meth}
+The MDE is specifically interested in three outcome variables; every smoked one cigarette, every smoked marijuana, and age when first approach to smoke cigarettes or marijuana.
+Moreover, they provided us with expected levels of precision for the survey in terms of the expected means and coefficient of variation (CV=0.05) which can be seen in Table 1.
 
-The sample design is a two-stage stratified cluster sample.
+```{r}
 
--   **Target Population:** Students enrolled in grades 7 through 12 in public and non-public schools in Michigan during the fall 2025 survey period.
-    The estimated total population size is N = 830,138 students.
+# build dataframe with inputs
+MI_school_samples <- tibble(
+  Outcome = c("smoked_cig", "smoked_mj", "age_approached"),
+  type = c("prop", "prop", "mean"),
+  desire_cv = rep(.05, 3),
+  expect_mean = c(.25, .15, 12),
+) 
 
--   **Sampling Frame:** The primary frame is the Michigan Department of Education's 2024 list of public and non-public schools with student headcounts.
-    This frame is assumed to be complete for the target population, although it excludes homeschooled students and those who have dropped out.
-    At the second stage, student rosters will be obtained from selected schools.
+MI_school_samples |> 
+  kable(caption="Key Variables and Desired Levels of Precision ",
+        col.names = c("Outcome", "Type", "Desired CV", "Expected Mean"),  
+        align = "c", booktabs = TRUE) 
+```
 
--    **Stages of Selection:**
+Given the desired levels of precision, we can compute the desired simple random sample (SRS) sample sizes when CV =.05 as $n = \frac{s^2}{se^2}$.
+We first must calculate the element variance for each key variable.
+For proportions we use $\hat{p}(1-\hat{p})$, while for age we simply just square the estimated standard deviation of 1 that was given to us, $v(\bar{y}) = \sigma^2$.
+We then calculate the standard error as $se(\hat{p}) = CV \times \hat{p}$.
+Finally, we estimate the desired sampling variance as $var(\hat{p}) =  se(\hat{p})^2 \text{, where }  se(\hat{p}) = \sqrt{var(\hat{p})}$.
+We show these results in Table 2, and note that these desired levels of precision would lead to large differences in sample sizes for each target variable.
+Therefore, we may wish to consider a more complex survey design.
 
-    -   Stage 1 (Primary Sampling Units, PSUs): Schools selected with probability proportional to size (PPeS), where size is the school's total student headcount (`tot_all`).
+```{r}
 
-    -   Stage 2 (Secondary Sampling Units, SSUs): Students selected systematically from rosters within selected schools.
-         
+MI_school_samples <- MI_school_samples |> 
+  mutate(
+    # compute element variance
+    var = if_else(type=="prop", # for proportions
+                               expect_mean * (1 - expect_mean), 
+                               if_else(type=="mean",# for means
+                                       1^2, NA)),
+    # compute stand dev
+    sd = sqrt(var),
+    # compute standard error
+    se = desire_cv * expect_mean,
+    # compute desired sample variance
+    V = se^2,
+    SRS_n = round(var / V))
 
--   **Stratification:** The frame of schools is stratified explicitly by the nine education regions defined by the client to improve precision and allow for regional estimates.
-    Implicit stratification is achieved by sorting schools within each region prior to systematic selection (e.g., by size).
 
--    **Key Variables & Precision Targets:** The design focuses on achieving a coefficient of variation (CV) of 0.05 or less for state-level estimates of:
+MI_school_samples |> select(-2:-4 ) |> 
+  kable(caption="Estimating SRS Desired Sample Size",
+        col.names = c("Outcome", "Element Variance", "SD", "SE", "Sampling Variables", 
+                      "SRS N"),  
+        align = "c", booktabs = TRUE) 
+```
 
-    -    Proportion who ever smoked one cigarette (expected p = 0.25).
+## Sampling Design {#sec-meth}
 
-    -   Proportion who ever smoked marijuana (expected p = 0.15).
+We propose a two-stage stratified cluster sampling as a complex survey sampling method for this project combining stratification with multi-stage cluster sampling.
+First, the entire population is divided into mutually exclusive and collectively exhausted subgroups called strata, based on shared characteristics relevant to the study (e.g., geographic region).
+Then, within each of these strata, the first stage of sampling occurs: a random sample of clusters (natural groupings like schools) is selected, and are called primary sampling unts (PSUs).
+In the second stage, a random sample of individual elements known as secondary sampling units (SSUs), such as students, are drawn from within each of the clusters selected in the first stage.
+This approach aims to improve sample efficiency and representation by ensuring subgroups are included (i.e., stratification) while reducing costs and logistical challenges associated with sampling individuals across large geographic areas.
 
-    -   Mean age when first approached to smoke cigarettes or marijuana (expected mean = 12, expected SD = 1).
+The MDE has given us the 2024 7th through 12th grade student headcount for each public and private school within each of the nine regions resulting in a target frame of $830,138$ across $2,443$ schools (78% Public).
+Schools in the first stage will be selected with probability proportional to student body size (PPeS).
+The proportionate allocation $M_h / \sum M_h$ where $M_h$ is the total number of students in stratum $h$, will be used to determine school number selection in the first stage.
+Table 3 presents for each of the 9 strata total students, number of schools, and proportionate allocation.
 
--   **Initial SRS Sample Sizes:** Ignoring clustering and FPC, the required SRS sample sizes to meet the CV=0.05 target were calculated as: n_srs(cig)=1200, n_srs(mj)=2267, and n_srs(age)=3.
+```{r}
 
--   **Design Parameters (roh, deff):** Using design effects from a similar prior study (deff_cig=2.5, deff_mj=2.0, deff_age=1.7, based on a=150 schools, m=50 students/school), the estimated intraclass correlations (roh) were calculated as: roh_cig=0.0306, roh_mj=0.0204, roh_age=0.0143.
+school_frame <- read_xls(
+  "~/work/d/SURV625project/data/MI_school_frame_head_counts.xls")
 
--   **Optimal Cluster Size (b\*) and Number of Clusters (a):** Considering a budget of \$500,000 and estimated costs of C_a=\$3,000 per school and C_b=\$50 per student, the optimal subsample size (b\*, denoted m_opt in code) and number of schools (a, denoted n_opt in code) were calculated for each variable.
-    To meet the precision target for all variables within budget, the design based on optimizing for marijuana smoking (which required the largest sample size) was chosen.
-    This yields:
 
-    -   Optimal average cluster size: **b\* = 53 students**
+# region counts
+strata_Prop_allocate <- school_frame |> 
+  group_by(Region) |> 
+  reframe(M_h = sum(tot_all), # total of students in stratum
+         N_h = n()) |> # total of schools in stratum
+  mutate(prop_allocation = M_h/sum(M_h)) 
 
-    -   Optimal number of clusters (schools): **a = 87 schools**
-        This design has an estimated total cost of \$491,550.
+strata_Prop_allocate |> 
+   kable(caption="Proportionate Allocation Across Strata",
+        col.names = c("Region", "Total Student", "Total Schools", 
+                      "Proportionate Allocation"),  
+        align = "c", booktabs = TRUE) 
 
--   **Non-Response Adjustments:** To account for anticipated non-response rates of 70% among schools (30% RR) and 30% among students within cooperating schools (70% RR), the number of schools and the within-school target take were adjusted:
 
-    -   Number of schools to select: a_select = 87 / 0.30 ≈ **290 schools**
+```
 
-    -   Target students per school (for fieldwork): b_field = 53 / 0.70 ≈ **76 students**
+We obtained design effects (DEFF) estimates (DEFF_cig=2.5, DEFF_mj=2.0, DEFF_age=1.7) from a similar pilot study of 7,500 students based on on 150 schools with 50 students each, and based on these we estimate the rate of homogeneity $roh$ for each target variable.
+We use the provided DEFFs to estimate $roh$ as $\hat{roh} = \frac{DEFF-1}{m-1}$, where $m$ is the total sampled students in the pilot study, to consider alternative cluster sample designs along with cost-considerations.
+Table 4 provides the $roh$ estimate for each target variable.
 
-Stratification and Allocation
+```{r}
+nm <- 7500
+n <- 150
+m <- nm / n
 
-The sample of schools is explicitly stratified by the nine education regions provided by the client.
-The allocation of the sample across these strata is designed to be proportionate to the total number of students (Measure of Size, MOS) in each stratum, aiming for an equal probability of selection method (epsem) overall.
+MI_school_samples <- MI_school_samples |> 
+  # add deff and roh to our table
+  mutate(desire_deff = c(2.5, 2.0, 1.7),
+         # compute roh
+         roh = (desire_deff - 1) / (m - 1),
+         )
+
+MI_school_samples |> 
+  select(Outcome, desire_deff, roh) |>  
+    kable(caption="We Use Pilot Study DEFFs to Estimate roh",
+        col.names = c("Outcome", "DEFF", "roh"),  
+        align = "c", booktabs = TRUE) 
+```
+
+### *Sampling Within Budget*
+
+Recall that our budget cost constraints as the cost per cluster as $c_n = \$3,000$ and cost per student as $c_m = \$50$, with a total budget constraint of $C = \$500,000$.
+We can use the $roh$estimates along with these costs to estimate the optimum subsample size $m_{opt}$ needed to achieve the desired precision as $m_{opt} = \sqrt{\frac{c_n}{c_m} \frac{1-roh}{roh}}$.
+Note that since we have three target variables we also have three separate $roh$ estimates and thus three $m_{opt}$ estimates.
+Similarly, we can use $m_{opt}$ to estimate the number of schools $n_{opt}$ to sample, $n_{opt} = \frac{C}{c_n + m_{opt} \times c_m}$ .
+Finally, we compute new DEFF for each variable as $roh$ is portable and since we already computed $m_{opt}$ as $DEFF_{new} = 1 + (m_{opt} - 1) \times roh$.
+By multiplying $m_{opt} \times n_{opt}$ for each variable we also get the total subsample size, as well as compute the total cost using $n_{opt} \times c_n + n_{opt} \times m_{opt} \times c_m$.
+Table 5 shows for each target variable $m_{opt}$, $n_{opt}$, $DEFF_{new}$, total subsample size denoted by $total_{nm}$, and the total cost.
+Notice that our $DEFF_{new}$ estimates are close to those from the pilot study since again we used these to compute $roh$ which is portable for estimating new design effects.
+
+```{r}
+
+c_n = 3000 # cost per cluster
+c_m = 50 # cost per element within cluster
+C = 500000 # total budget
+
+MI_school_samples <- MI_school_samples |> 
+  mutate(
+    # compute optimum m size
+    m_opt = sqrt( (c_n / c_m) * ( (1-roh)/roh) ),
+    n_opt = C / (c_n + m_opt * c_m),
+    # compute new deff
+    deff_new = 1 + (m_opt-1) * roh,
+     # compute total SSU
+    total_nm = m_opt * n_opt)
+
+MI_school_samples |> 
+  select(Outcome, m_opt, n_opt, deff_new, total_nm) |> 
+  mutate(cost = (c_n * n_opt) + (c_m * n_opt * m_opt),
+         cost = scales::dollar(cost),
+         Outcome = ifelse(Outcome == "age_approached_to_smoke", 
+                          "age_smoke", Outcome),
+         Option = 1:3) |>
+  kable(caption="Estimating New DEFF and Total Cost",
+        align = "c", booktabs = TRUE) 
+
+# note, 88 * c_n + 88 * 53 * c_m = $497,200
+```
+
+### *Evaluating Alternative Clustering Designs*
+
+We are left with a dilemma since we now have three subsample sizes that we can use, thus giving us three clustering design options to choose from.
+Using the $m_{opt}$ values from table 5 as our three options, we iterate over each set of three target variables using these values to recompute for each target variable a new design effect and evaluate the estimated sampling variance for each design.
+We estimate the SRS sampling variance as $var_{srs} = \frac{var}{total_{nm} - 1}$ where var is the sampling variance calculated from the pilot study and the denominator is the degrees of freedom.
+Additionally, we estimate the sampling variance for the clustering design as $var_{crs} = var_{srs} \times deff_{new}$.
+After estimating $var_{crs}$, we can square it to estimate a standard error, $se=\sqrt{var_{crs}}$ to use to estimate 95% confidence intervals for the estimated means.
+Additionally, in our evaluation of $m_{opt}$ we can determine if the estimated sampling variance from the complex design is smaller than what is desired from MDE, therefore Table 6 shows sampling variances, standard errors, confidence intervals, and a variance check (e.g., "Y" = yes if \<= to desired sampling variance) for each target variable using the $m_{opt}$ options in Table 5.
+
+```{r}
+
+map_dfr(seq(1,3), function(x){
+  
+  MI_school_samples |> 
+  # we can print projected total cost for n=50
+  mutate(m_opt = m_opt[x], # optimum m from first row
+         n_opt = n_opt[x],
+         total_nm = m_opt*n_opt,
+         # calculate new deff
+         deff_new = 1 + (m_opt-1) * roh,
+         # recalcualte element variance
+         var = c(.24, .1275, 9),
+         # calcualte SRS variance
+         var_srs =  var / (total_nm - 1),
+         # calculate complex design variance
+         var_crs = var_srs * deff_new,
+          # compute confidence intervals
+         se = sqrt(var_crs),
+         lower = expect_mean  - 1.96*se,
+         upper = expect_mean + 1.96*se,
+        # flag if var_crs is lower or = to desired sampling var
+         var_ck = ifelse(var_crs <= V, "Y", "N"),
+        Option = x,
+  ) 
+    
+  
+}) |> 
+  select(Outcome, Option, deff_new, var_srs, var_crs, se, lower, upper, var_ck) |> 
+  mutate_at(3:8, round, 6) |> 
+  kable(caption="Evaluating Alternative Clustering Designs",
+        align = "c", booktabs = TRUE) 
+
+
+# total pop
+N <- school_frame |> tally(tot_all) |> pull()
+
+# optimum n
+total_nm <- MI_school_samples |> 
+  slice(2) |> # second design option 
+  summarise(m_opt*n_opt) |> 
+  pull()
+
+
+samp_frac <- total_nm / N
+
+
+```
+
+Upon evaluation of options from Table 6, we determine that option 2 has reasonable estimated design effects comparable to those from the pilot study as well as it is the only option to pass the estimated sampling variance check we designed.
+Option 2 with $m_{opt} = 53, n_{opt} = 88$ would cost a total of \$497,200.
+Since the total student population is `r N` and our now target sample is `r round(total_nm)` we can estimate the sampling fraction to be $f = n/N$ = `r samp_frac`.
+The sampling fraction is the ratio of the sample size to the population size, and this estimate translates to the sample comprises approximately 0.57% of the total student population.
+In this case, the sampling fraction is low and the finite population correction factor is not needed for calculating variances to adjust for the fact that sampling without replacement from a finite population reduces variability compared to sampling from an infinite population.
+
+### *Non-response Adjustments*
+
+```{r}
+# response rates
+school_rr <- .30
+student_rr <- .70
+# Given values
+n_opt <- MI_school_samples |> 
+  slice(2) |> select(n_opt) |> 
+  pull() / school_rr
+
+m_opt <- MI_school_samples |> 
+  slice(2) |> select(m_opt) |> 
+  pull() / student_rr
+
+
+```
+
+The MDE anticipates 30% school response rates and 70% among students; therefore, we adjust the number of schools and within-school target by multiplying $m_{opt} \times RR_{student} = 53 \times .70$ = `r m_opt` students and for schools $n_{opt} \times RR_{schools} =  \times .30$ = `r n_opt`.
+We use these values to allocate the number of clusters for each strata based on the proportion allocated we calculated.
+
+## Stage 1 Selection
+
+We consider stratified PPeS selection of schools from each strata by first sorting the list of schools to achieve implicit stratification.
+How we sort is by taking the number of 9th through 12th grade for each school divided by the total student body and descend order, and in this way we hypothesize that schools with older students are more likely to be positively associated with the target variables.
+For each strata $h$ we assign our adjusted $n_{opt} \times proportionate \_ allocation$ estimated earlier to calculate the number of schools to sample, denoted as $n_h$ in Table 7.
+We use $n_h$ to calculated in this Table the sampling interval $k_h = \frac{\sum_{i \ in h} MOS_{hi}}{n_h}$ where $MOS_{hi}$ is the measure of size, total student head-count, for each school $i$ in strata $h$.
+The $k_h$ parameter is an important component of systematic sampling to determine how frequently units are selected from an ordered list.
+To conduct this selection, we randomly select a number between 1 and $k_h$ for selecting schools from the list, which is captured in Table 7 as $RN$.
+
+```{r}
+set.seed(9999) 
+
+# Compute proportional allocation of clusters to each stratum
+region_summary <- strata_Prop_allocate |> 
+  # Ensure at least 1 cluster per
+  mutate(n_h = n_opt * prop_allocation,
+                     N_h = as.double(N_h)) |> 
+  group_by(Region) |> 
+  reframe(across(where(is.double), ~ sum(.x))) |> 
+  mutate(f_h = (n_h*M_h) / M_h,     # sampling fraction
+         k_h = M_h / round(n_h)) |>    # zone size
+  # create random start values
+  rowwise() |> 
+  mutate(RN = sample(1:k_h, 1)) |> 
+  ungroup() 
+
+
+region_summary |> 
+  select(Region, prop_allocation, n_h, f_h, k_h, RN) |> 
+  kable(caption="Evaluating Alternative Clustering Designs",
+        align = "c", booktabs = TRUE) 
+```

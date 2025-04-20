@@ -95,6 +95,20 @@
 \addtolength{\textwidth}{1in}%
 \addtolength{\textheight}{1.7in}%
 \addtolength{\topmargin}{-1in}%
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \AtBeginDocument{%
@@ -167,7 +181,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\date{April 17, 2025}
+\date{April 20, 2025}
 \title{\bf Michigan Teen Smoking and Drug Use Survey Sample Design}
 \author{
 Kevin Linares\\
@@ -191,119 +205,431 @@ University of Maryland\\
 
 \section{Introduction}\label{sec-intro}
 
-The State of Michigan Department of Education requires data to monitor
-teenage smoking and drug use, partly to assess compliance with tobacco
-industry settlements. This report details the design of a statewide
-probability sample of Michigan teenagers (enrolled students in grades
-7-12) developed to meet the Department's needs. The objective was to
-create a cost-effective sample design capable of producing estimates for
-key variables with a coefficient of variation (CV) no greater than 0.05,
-for both the state overall and for specific regions. Based on cost
-considerations and a review of alternatives, a two-stage school-based
-sample design was chosen by the client. This report outlines the overall
-design, stratification and allocation plan, selection procedures, and
-estimation methods.
+The State of Michigan Department of Education (MDE) requires data to
+monitor teenage smoking and drug use, partly to assess compliance with
+tobacco industry settlements. This report details the design of a
+statewide probability sample of Michigan teenagers (enrolled students in
+grades 7-12) developed to meet the Department's needs. The objective was
+to create a cost-effective sample design capable of producing estimates
+for key variables with desired mean and sampling variance for both the
+state overall and each of the nine official school regions. Based on
+cost considerations and a review of alternatives, a two-stage
+school-based sample design was chosen by the client. We outline in this
+report the overall design, stratification and allocation plan, selection
+procedures, and estimation methods. Our budget consist of a total of
+\$500,000; each school \(C_n\) cost \$3,000 and each student \(C_m\)
+cost \$50 to sample.\\
 
-\section{Overall Design}\label{sec-meth}
+The MDE is specifically interested in three outcome variables; every
+smoked one cigarette, every smoked marijuana, and age when first
+approach to smoke cigarettes or marijuana. Moreover, they provided us
+with expected levels of precision for the survey in terms of the
+expected means and coefficient of variation (CV=0.05) which can be seen
+in Table 1.
 
-The sample design is a two-stage stratified cluster sample.
+\begin{longtable}[]{@{}cccc@{}}
+\caption{Key Variables and Desired Levels of Precision}\tabularnewline
+\toprule\noalign{}
+Outcome & Type & Desired CV & Expected Mean \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+Outcome & Type & Desired CV & Expected Mean \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+smoked\_cig & prop & 0.05 & 0.25 \\
+smoked\_mj & prop & 0.05 & 0.15 \\
+age\_approached & mean & 0.05 & 12.00 \\
+\end{longtable}
 
-\begin{itemize}
-\item
-  \textbf{Target Population:} Students enrolled in grades 7 through 12
-  in public and non-public schools in Michigan during the fall 2025
-  survey period. The estimated total population size is N = 830,138
-  students.
-\item
-  \textbf{Sampling Frame:} The primary frame is the Michigan Department
-  of Education's 2024 list of public and non-public schools with student
-  headcounts. This frame is assumed to be complete for the target
-  population, although it excludes homeschooled students and those who
-  have dropped out. At the second stage, student rosters will be
-  obtained from selected schools.
-\item
-  \textbf{Stages of Selection:}
-\end{itemize}
+Given the desired levels of precision, we can compute the desired simple
+random sample (SRS) sample sizes when CV =.05 as
+\(n = \frac{s^2}{se^2}\). We first must calculate the element variance
+for each key variable. For proportions we use \(\hat{p}(1-\hat{p})\),
+while for age we simply just square the estimated standard deviation of
+1 that was given to us, \(v(\bar{y}) = \sigma^2\). We then calculate the
+standard error as \(se(\hat{p}) = CV \times \hat{p}\). Finally, we
+estimate the desired sampling variance as
+\(var(\hat{p}) =  se(\hat{p})^2 \text{, where }  se(\hat{p}) = \sqrt{var(\hat{p})}\).
+We show these results in Table 2, and note that these desired levels of
+precision would lead to large differences in sample sizes for each
+target variable. Therefore, we may wish to consider a more complex
+survey design.
 
-\begin{verbatim}
--   Stage 1 (Primary Sampling Units, PSUs): Schools selected with probability proportional to size (PPeS), where size is the school's total student headcount (`tot_all`).
+\begin{longtable}[]{@{}
+  >{\centering\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2000}}
+  >{\centering\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2250}}
+  >{\centering\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1375}}
+  >{\centering\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1000}}
+  >{\centering\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.2500}}
+  >{\centering\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.0875}}@{}}
+\caption{Estimating SRS Desired Sample Size}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+Outcome
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Element Variance
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+SD
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+SE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Sampling Variables
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+SRS N
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+Outcome
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Element Variance
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+SD
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+SE
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Sampling Variables
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+SRS N
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+smoked\_cig & 0.1875 & 0.4330127 & 0.0125 & 0.0001563 & 1200 \\
+smoked\_mj & 0.1275 & 0.3570714 & 0.0075 & 0.0000562 & 2267 \\
+age\_approached & 1.0000 & 1.0000000 & 0.6000 & 0.3600000 & 3 \\
+\end{longtable}
 
--   Stage 2 (Secondary Sampling Units, SSUs): Students selected systematically from rosters within selected schools.
-     
-\end{verbatim}
+\section{Sampling Design}\label{sec-meth}
 
-\begin{itemize}
-\item
-  \textbf{Stratification:} The frame of schools is stratified explicitly
-  by the nine education regions defined by the client to improve
-  precision and allow for regional estimates. Implicit stratification is
-  achieved by sorting schools within each region prior to systematic
-  selection (e.g., by size).
-\item
-  \textbf{Key Variables \& Precision Targets:} The design focuses on
-  achieving a coefficient of variation (CV) of 0.05 or less for
-  state-level estimates of:
-\end{itemize}
+We propose a two-stage stratified cluster sampling as a complex survey
+sampling method for this project combining stratification with
+multi-stage cluster sampling. First, the entire population is divided
+into mutually exclusive and collectively exhausted subgroups called
+strata, based on shared characteristics relevant to the study (e.g.,
+geographic region). Then, within each of these strata, the first stage
+of sampling occurs: a random sample of clusters (natural groupings like
+schools) is selected, and are called primary sampling unts (PSUs). In
+the second stage, a random sample of individual elements known as
+secondary sampling units (SSUs), such as students, are drawn from within
+each of the clusters selected in the first stage. This approach aims to
+improve sample efficiency and representation by ensuring subgroups are
+included (i.e., stratification) while reducing costs and logistical
+challenges associated with sampling individuals across large geographic
+areas.
 
-\begin{verbatim}
--    Proportion who ever smoked one cigarette (expected p = 0.25).
+The MDE has given us the 2024 7th through 12th grade student headcount
+for each public and private school within each of the nine regions
+resulting in a target frame of \(830,138\) across \(2,443\) schools
+(78\% Public). Schools in the first stage will be selected with
+probability proportional to student body size (PPeS). The proportionate
+allocation \(M_h / \sum M_h\) where \(M_h\) is the total number of
+students in stratum \(h\), will be used to determine school number
+selection in the first stage. Table 3 presents for each of the 9 strata
+total students, number of schools, and proportionate allocation.
 
--   Proportion who ever smoked marijuana (expected p = 0.15).
+\begin{longtable}[]{@{}cccc@{}}
+\caption{Proportionate Allocation Across Strata}\tabularnewline
+\toprule\noalign{}
+Region & Total Student & Total Schools & Proportionate Allocation \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+Region & Total Student & Total Schools & Proportionate Allocation \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 3561 & 20 & 0.0042896 \\
+2 & 5474 & 30 & 0.0065941 \\
+3 & 8631 & 33 & 0.0103971 \\
+4 & 4855 & 31 & 0.0058484 \\
+5 & 18907 & 80 & 0.0227757 \\
+6 & 33133 & 133 & 0.0399126 \\
+7 & 191992 & 644 & 0.2312772 \\
+8 & 188830 & 549 & 0.2274682 \\
+9 & 374755 & 923 & 0.4514370 \\
+\end{longtable}
 
--   Mean age when first approached to smoke cigarettes or marijuana (expected mean = 12, expected SD = 1).
-\end{verbatim}
+We obtained design effects (DEFF) estimates (DEFF\_cig=2.5,
+DEFF\_mj=2.0, DEFF\_age=1.7) from a similar pilot study of 7,500
+students based on on 150 schools with 50 students each, and based on
+these we estimate the rate of homogeneity \(roh\) for each target
+variable. We use the provided DEFFs to estimate \(roh\) as
+\(\hat{roh} = \frac{DEFF-1}{m-1}\), where \(m\) is the total sampled
+students in the pilot study, to consider alternative cluster sample
+designs along with cost-considerations. Table 4 provides the \(roh\)
+estimate for each target variable.
 
-\begin{itemize}
-\item
-  \textbf{Initial SRS Sample Sizes:} Ignoring clustering and FPC, the
-  required SRS sample sizes to meet the CV=0.05 target were calculated
-  as: n\_srs(cig)=1200, n\_srs(mj)=2267, and n\_srs(age)=3.
-\item
-  \textbf{Design Parameters (roh, deff):} Using design effects from a
-  similar prior study (deff\_cig=2.5, deff\_mj=2.0, deff\_age=1.7, based
-  on a=150 schools, m=50 students/school), the estimated intraclass
-  correlations (roh) were calculated as: roh\_cig=0.0306,
-  roh\_mj=0.0204, roh\_age=0.0143.
-\item
-  \textbf{Optimal Cluster Size (b*) and Number of Clusters (a):}
-  Considering a budget of \$500,000 and estimated costs of C\_a=\$3,000
-  per school and C\_b=\$50 per student, the optimal subsample size (b*,
-  denoted m\_opt in code) and number of schools (a, denoted n\_opt in
-  code) were calculated for each variable. To meet the precision target
-  for all variables within budget, the design based on optimizing for
-  marijuana smoking (which required the largest sample size) was chosen.
-  This yields:
+\begin{longtable}[]{@{}ccc@{}}
+\caption{We Use Pilot Study DEFFs to Estimate roh}\tabularnewline
+\toprule\noalign{}
+Outcome & DEFF & roh \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+Outcome & DEFF & roh \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+smoked\_cig & 2.5 & 0.0306122 \\
+smoked\_mj & 2.0 & 0.0204082 \\
+age\_approached & 1.7 & 0.0142857 \\
+\end{longtable}
 
-  \begin{itemize}
-  \item
-    Optimal average cluster size: \textbf{b* = 53 students}
-  \item
-    Optimal number of clusters (schools): \textbf{a = 87 schools} This
-    design has an estimated total cost of \$491,550.
-  \end{itemize}
-\item
-  \textbf{Non-Response Adjustments:} To account for anticipated
-  non-response rates of 70\% among schools (30\% RR) and 30\% among
-  students within cooperating schools (70\% RR), the number of schools
-  and the within-school target take were adjusted:
+\subsection{\texorpdfstring{\emph{Sampling Within
+Budget}}{Sampling Within Budget}}\label{sampling-within-budget}
 
-  \begin{itemize}
-  \item
-    Number of schools to select: a\_select = 87 / 0.30 ≈ \textbf{290
-    schools}
-  \item
-    Target students per school (for fieldwork): b\_field = 53 / 0.70 ≈
-    \textbf{76 students}
-  \end{itemize}
-\end{itemize}
+Recall that our budget cost constraints as the cost per cluster as
+\(c_n = \$3,000\) and cost per student as \(c_m = \$50\), with a total
+budget constraint of \(C = \$500,000\). We can use the \(roh\)estimates
+along with these costs to estimate the optimum subsample size
+\(m_{opt}\) needed to achieve the desired precision as
+\(m_{opt} = \sqrt{\frac{c_n}{c_m} \frac{1-roh}{roh}}\). Note that since
+we have three target variables we also have three separate \(roh\)
+estimates and thus three \(m_{opt}\) estimates. Similarly, we can use
+\(m_{opt}\) to estimate the number of schools \(n_{opt}\) to sample,
+\(n_{opt} = \frac{C}{c_n + m_{opt} \times c_m}\) . Finally, we compute
+new DEFF for each variable as \(roh\) is portable and since we already
+computed \(m_{opt}\) as \(DEFF_{new} = 1 + (m_{opt} - 1) \times roh\).
+By multiplying \(m_{opt} \times n_{opt}\) for each variable we also get
+the total subsample size, as well as compute the total cost using
+\(n_{opt} \times c_n + n_{opt} \times m_{opt} \times c_m\). Table 5
+shows for each target variable \(m_{opt}\), \(n_{opt}\), \(DEFF_{new}\),
+total subsample size denoted by \(total_{nm}\), and the total cost.
+Notice that our \(DEFF_{new}\) estimates are close to those from the
+pilot study since again we used these to compute \(roh\) which is
+portable for estimating new design effects.
 
-Stratification and Allocation
+\begin{longtable}[]{@{}
+  >{\centering\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.2162}}
+  >{\centering\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1351}}
+  >{\centering\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1351}}
+  >{\centering\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1351}}
+  >{\centering\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1351}}
+  >{\centering\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1351}}
+  >{\centering\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1081}}@{}}
+\caption{Estimating New DEFF and Total Cost}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+Outcome
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+m\_opt
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+n\_opt
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+deff\_new
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+total\_nm
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+cost
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Option
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+Outcome
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+m\_opt
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+n\_opt
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+deff\_new
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+total\_nm
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+cost
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Option
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+smoked\_cig & 43.58899 & 96.53536 & 2.303745 & 4207.879 & \$500,000 &
+1 \\
+smoked\_mj & 53.66563 & 87.97734 & 2.074809 & 4721.360 & \$500,000 &
+2 \\
+age\_approached & 64.34283 & 80.42281 & 1.904898 & 5174.631 & \$500,000
+& 3 \\
+\end{longtable}
 
-The sample of schools is explicitly stratified by the nine education
-regions provided by the client. The allocation of the sample across
-these strata is designed to be proportionate to the total number of
-students (Measure of Size, MOS) in each stratum, aiming for an equal
-probability of selection method (epsem) overall.
+\subsection{\texorpdfstring{\emph{Evaluating Alternative Clustering
+Designs}}{Evaluating Alternative Clustering Designs}}\label{evaluating-alternative-clustering-designs}
+
+We are left with a dilemma since we now have three subsample sizes that
+we can use, thus giving us three clustering design options to choose
+from. Using the \(m_{opt}\) values from table 5 as our three options, we
+iterate over each set of three target variables using these values to
+recompute for each target variable a new design effect and evaluate the
+estimated sampling variance for each design. We estimate the SRS
+sampling variance as \(var_{srs} = \frac{var}{total_{nm} - 1}\) where
+var is the sampling variance calculated from the pilot study and the
+denominator is the degrees of freedom. Additionally, we estimate the
+sampling variance for the clustering design as
+\(var_{crs} = var_{srs} \times deff_{new}\). After estimating
+\(var_{crs}\), we can square it to estimate a standard error,
+\(se=\sqrt{var_{crs}}\) to use to estimate 95\% confidence intervals for
+the estimated means. Additionally, in our evaluation of \(m_{opt}\) we
+can determine if the estimated sampling variance from the complex design
+is smaller than what is desired from MDE, therefore Table 6 shows
+sampling variances, standard errors, confidence intervals, and a
+variance check (e.g., ``Y'' = yes if \textless= to desired sampling
+variance) for each target variable using the \(m_{opt}\) options in
+Table 5.
+
+\begin{longtable}[]{@{}
+  >{\centering\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1702}}
+  >{\centering\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.0851}}
+  >{\centering\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1064}}
+  >{\centering\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1064}}
+  >{\centering\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1064}}
+  >{\centering\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1064}}
+  >{\centering\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1170}}
+  >{\centering\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1170}}
+  >{\centering\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.0851}}@{}}
+\caption{Evaluating Alternative Clustering Designs}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+Outcome
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Option
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+deff\_new
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+var\_srs
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+var\_crs
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+se
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+lower
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+upper
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+var\_ck
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+Outcome
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+Option
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+deff\_new
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+var\_srs
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+var\_crs
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+se
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+lower
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+upper
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+var\_ck
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+smoked\_cig & 1 & 2.303745 & 0.000057 & 0.000131 & 0.011464 & 0.227530 &
+0.272470 & Y \\
+smoked\_mj & 1 & 1.869163 & 0.000030 & 0.000057 & 0.007527 & 0.135248 &
+0.164752 & N \\
+age\_approached & 1 & 1.608414 & 0.002139 & 0.003441 & 0.058660 &
+11.885027 & 12.114973 & Y \\
+smoked\_cig & 2 & 2.612213 & 0.000051 & 0.000133 & 0.011525 & 0.227412 &
+0.272588 & Y \\
+smoked\_mj & 2 & 2.074809 & 0.000027 & 0.000056 & 0.007486 & 0.135327 &
+0.164673 & Y \\
+age\_approached & 2 & 1.752366 & 0.001907 & 0.003341 & 0.057802 &
+11.886707 & 12.113293 & Y \\
+smoked\_cig & 3 & 2.939066 & 0.000046 & 0.000136 & 0.011676 & 0.227114 &
+0.272886 & Y \\
+smoked\_mj & 3 & 2.292711 & 0.000025 & 0.000057 & 0.007517 & 0.135267 &
+0.164733 & N \\
+age\_approached & 3 & 1.904898 & 0.001740 & 0.003314 & 0.057565 &
+11.887172 & 12.112828 & Y \\
+\end{longtable}
+
+Upon evaluation of options from Table 6, we determine that option 2 has
+reasonable estimated design effects comparable to those from the pilot
+study as well as it is the only option to pass the estimated sampling
+variance check we designed. Option 2 with \(m_{opt} = 53, n_{opt} = 88\)
+would cost a total of \$497,200. Since the total student population is
+830138 and our now target sample is 4721 we can estimate the sampling
+fraction to be \(f = n/N\) = 0.0056874. The sampling fraction is the
+ratio of the sample size to the population size, and this estimate
+translates to the sample comprises approximately 0.57\% of the total
+student population. In this case, the sampling fraction is low and the
+finite population correction factor is not needed for calculating
+variances to adjust for the fact that sampling without replacement from
+a finite population reduces variability compared to sampling from an
+infinite population.
+
+\subsection{\texorpdfstring{\emph{Non-response
+Adjustments}}{Non-response Adjustments}}\label{non-response-adjustments}
+
+The MDE anticipates 30\% school response rates and 70\% among students;
+therefore, we adjust the number of schools and within-school target by
+multiplying \(m_{opt} \times RR_{student} = 53 \times .70\) = 76.6651878
+students and for schools \(n_{opt} \times RR_{schools} =  \times .30\) =
+293.2578028. We use these values to allocate the number of clusters for
+each strata based on the proportion allocated we calculated.
+
+\section{Stage 1 Selection}\label{stage-1-selection}
+
+We consider stratified PPeS selection of schools from each strata by
+first sorting the list of schools to achieve implicit stratification.
+How we sort is by taking the number of 9th through 12th grade for each
+school divided by the total student body and descend order, and in this
+way we hypothesize that schools with older students are more likely to
+be positively associated with the target variables. For each strata
+\(h\) we assign our adjusted
+\(n_{opt} \times proportionate \_ allocation\) estimated earlier to
+calculate the number of schools to sample, denoted as \(n_h\) in Table
+7. We use \(n_h\) to calculated in this Table the sampling interval
+\(k_h = \frac{\sum_{i \ in h} MOS_{hi}}{n_h}\) where \(MOS_{hi}\) is the
+measure of size, total student head-count, for each school \(i\) in
+strata \(h\). The \(k_h\) parameter is an important component of
+systematic sampling to determine how frequently units are selected from
+an ordered list. To conduct this selection, we randomly select a number
+between 1 and \(k_h\) for selecting schools from the list, which is
+captured in Table 7 as \(RN\).
+
+\begin{longtable}[]{@{}cccccc@{}}
+\caption{Evaluating Alternative Clustering Designs}\tabularnewline
+\toprule\noalign{}
+Region & prop\_allocation & n\_h & f\_h & k\_h & RN \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+Region & prop\_allocation & n\_h & f\_h & k\_h & RN \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 0.0042896 & 1.257973 & 1.257973 & 3561.000 & 3168 \\
+2 & 0.0065941 & 1.933767 & 1.933767 & 2737.000 & 2310 \\
+3 & 0.0103971 & 3.049021 & 3.049021 & 2877.000 & 1321 \\
+4 & 0.0058484 & 1.715096 & 1.715096 & 2427.500 & 131 \\
+5 & 0.0227757 & 6.679161 & 6.679161 & 2701.000 & 2122 \\
+6 & 0.0399126 & 11.704693 & 11.704693 & 2761.083 & 2114 \\
+7 & 0.2312772 & 67.823846 & 67.823846 & 2823.412 & 374 \\
+8 & 0.2274682 & 66.706826 & 66.706826 & 2818.358 & 380 \\
+9 & 0.4514370 & 132.387420 & 132.387420 & 2839.053 & 1673 \\
+\end{longtable}
 
 
 
