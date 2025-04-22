@@ -673,15 +673,17 @@ The PPeS systematic sampling makes for direct variance estimation
 difficult; therefore, we use the paired selection model to help us
 estimate variance. However, we cannot form a pseudo-stratum from just
 one cluster nor have odd number of clusters, since paired methods
-require at least tow units within a stratum. We collapse stratum that
-have odd number clusters or just one cluster with the adjacent stratum.
-In Table 9 we show collapsed strata and corresponding number of sampling
-error computation units (SECU); we collapsed regions 1 to 3 into stratum
-1, regions 4 to 7 into stratum 2, and left regions 8 and 9 the same. We
-take all of the linked clusters and divide them by two to get the paired
-SECU count. We now have a total of 4 strata in this model, 3 SECUs for
-stratum 1, 103 SECUS for stratum 2, 77 SECUS for stratum 3, and 135
-SECUs for stratum 4 resulting in a total of 318 SECUs across strata.
+require at least tow units within a stratum. A key constraint for this
+approach is that each stratum must contain at least two independent
+variance units. We collapse stratum that have odd number clusters or
+just one cluster with the adjacent stratum. In Table 9 we show collapsed
+strata and corresponding number of sampling error computation units
+(SECU); we collapsed regions 1 to 3 into stratum 1, regions 4 to 7 into
+stratum 2, and left regions 8 and 9 the same. We take all of the linked
+clusters and divide them by two to get the paired SECU count. We now
+have a total of 4 strata in this model, 3 SECUs for stratum 1, 103 SECUS
+for stratum 2, 77 SECUS for stratum 3, and 135 SECUs for stratum 4
+resulting in a total of 318 SECUs across strata.
 
 \begin{longtable}[]{@{}cc@{}}
 \caption{Evaluating Alternative Clustering Designs}\tabularnewline
@@ -701,26 +703,7 @@ Psuedo & SECU \\
 4 & 135 \\
 \end{longtable}
 
-Taylor Series Linearization Variance Estimation:
-\(\text{For all strata } n_h = 2\)
-
-\[
-\text{var}(r) \approx \frac{1}{\hat{t}_x^2} \left[ \sum_h \text{var}(\hat{t}_{h,y}) + r^2 \sum_h \text{var}(\hat{t}_{h,x}) - 2r \sum_h \text{cov}(\hat{t}_{h,y}, \hat{t}_{h,x}) \right]
-\]
-
-\begin{align*}
-   \text{var}(r) \approx \frac{1}{\hat{t}_x^2} \left[ \sum_h \text{var}(\hat{t}_{h,y}) + r^2 \sum_h      \text{var}(\hat{t}_{h,x}) - 2r \sum_h \text{cov}(\hat{t}_{h,y}, \hat{t}_{h,x}) \right] \\
-   = \frac{1}{\hat{t}_x^2}  \Biggr[  \sum_h (1 - f_h)(\hat{t}_{h,1,y} - \hat{t}_{h,2,y})^2 + \\
-r^2 \sum_h (1 - f_h)(\hat{t}_{h,1,x} - \hat{t}_{h,2,x})^2 - \\
-2r \sum_h (1 - f_h)(\hat{t}_{h,1,y} - \hat{t}_{h,2,y})(\hat{t}_{h,1,x} - \hat{t}_{h,2,x}) \Biggr]
-\end{align*}
-
-\begin{align*}
-1 + 2 = 3 \\
-3 + 2 = 5
-\end{align*}
-
-Students selection sample
+\emph{Students selection sample}
 
 We implement the same systematic random sampling for the roster example
 of schools from Region 7. The randomly sampled middle school was from
@@ -737,7 +720,108 @@ To get the sampling interval \(k_hi = Mos_{hi} / n_h = \frac{16}{242}\),
 we choose a random starting number between 1 and \(k_{hi}\), which is
 14.6, then we use the k-interval 146 to conduct the systematic sampling.
 Then we selected the student at the random start position(14) and every
-\(k_{hi}\)-th student thereafter from the ordered roster.
+\(k_{hi}\)-th student thereafter from the ordered roster. We print the
+roaster of names in the Appendix to save space here.
+
+\subsection{\texorpdfstring{\emph{Sampling Error Calculation
+Model}}{Sampling Error Calculation Model}}\label{sampling-error-calculation-model}
+
+Our design resulted in 318 paired units of PSUs, used for variance
+estimation. These SECU pairs were formed by grouping sampled schools
+within collapsed regions to meet minimum size thresholds. The paired
+difference method requires at least two SECUs per variance stratum, and
+collapsing ensured that this condition was met in all cases. The degrees
+of freedom for variance estimation are calculated as the number of SECUs
+minus the number of collapsed strata, \(df=a-H=318-4=314\).
+
+To estimate the variance of a ratio estimator (e.g., the proportion of
+students who smoked), we applied Taylor Series Linearization with paired
+SECUs. For n\_h = 2 in each stratum, the variance of the ratio =
+\(\frac{t_y}/{t_x}\) was approximated as:
+
+\begin{align*}
+   \text{var}(r) \approx \frac{1}{\hat{t}_x^2} \left[ \sum_h \text{var}(\hat{t}_{h,y}) + r^2 \sum_h      \text{var}(\hat{t}_{h,x}) - 2r \sum_h \text{cov}(\hat{t}_{h,y}, \hat{t}_{h,x}) \right] \\
+   = \frac{1}{\hat{t}_x^2}  \Biggr[  \sum_h (1 - f_h)(\hat{t}_{h,1,y} - \hat{t}_{h,2,y})^2 + \\
+r^2 \sum_h (1 - f_h)(\hat{t}_{h,1,x} - \hat{t}_{h,2,x})^2 - \\
+2r \sum_h (1 - f_h)(\hat{t}_{h,1,y} - \hat{t}_{h,2,y})(\hat{t}_{h,1,x} - \hat{t}_{h,2,x}) \Biggr]
+\end{align*}
+
+In our case, the estimated variance across SECU pairs was var\_estimate
+= 0.00514. From this estimate we estimate the standard error (SE) was as
+\(se = \sqrt{0.00514} = 0.07179\). With degrees of freedom \(df=314\),
+the 95\% confidence interval was calculated using the t-distribution:
+\((0.0588 , 0.3403)\).
+
+\subsubsection{\texorpdfstring{\emph{Estimator Formula and
+Weighting}}{Estimator Formula and Weighting}}\label{estimator-formula-and-weighting}
+
+The estimator for the proportion of students with a given trait (e.g.,
+smoking behavior) is computed as a weighted average. The formula used is
+\(\hat{p} = \frac{\sum w_{hij} y_{hij}}{w_{hij}}\). In this equation,\$
+y\_\{hij\} = 1\$ if student \(j\) in school \(i\) within stratum \(h\)
+has the characteristic of interest, and \(y_{hij} = 0\) otherwise. The
+term \(w_{hij}\) represents the final weight assigned to each student
+and reflects the product of several adjustments. These include the
+inverse of the probability of selection, school-level and student-level
+nonresponse adjustments, and any corrections for second-stage linking or
+operational deviations during data collection.
+
+Although the original design was structured to be equal probability of
+selection (epsem), in practice, weights are required. This is due to
+observed differences in participation and inclusion at both the school
+and student levels. Specifically, weights correct for approximately 30\%
+nonresponse at the school level and 70\% nonresponse at the student
+level. Thus, while our estimator maintains design-based integrity,
+proper weighting is essential for unbiased inference.
+
+\subsubsection{\texorpdfstring{\emph{Subclass
+Estimation}}{Subclass Estimation}}\label{subclass-estimation}
+
+The client requested reliable estimation for a 20\% population subgroup.
+To evaluate the adequacy of our design for supporting such subclass
+estimates, we calculated the expected number of completes per SECU,
+denoted b*, which was approximately 76.67. Assuming a 20\% subclass
+size, the expected number of observations per SECU for the subgroup is
+the expected subclass per SECU = \(0.20 \ times 76.68 = 15.3\). This
+value exceeds the minimum recommended threshold of 10, which is
+generally considered sufficient for reliable variance estimation at the
+subgroup level. Therefore, we conclude that confidence intervals for
+subclass means or proportions can be computed using the same paired SECU
+difference method, and the degrees of freedom remain the same.
+
+\newpage
+
+\section{Appendix 1: Students Selected From One
+School.}\label{appendix-1-students-selected-from-one-school.}
+
+\begin{longtable}[]{@{}ccccc@{}}
+\caption{Evaluating Alternative Clustering Designs}\tabularnewline
+\toprule\noalign{}
+ID & Grade & class & Firstname & Lastname \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+ID & Grade & class & Firstname & Lastname \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 7 & Grady Vest & Magee & Monica L \\
+16 & 7 & Grady Vest & Schwartz & David Scott \\
+30 & 7 & Qixuan Li & Raynor & Gregory K \\
+45 & 7 & Qixuan Li & Franke & Mira A \\
+59 & 7 & Bill Pesau & Black & Stephen P \\
+74 & 7 & Andrew Bellman & Marbut & Joanne Renee \\
+89 & 7 & Andrew Bellman & Trecker & Molly A \\
+103 & 8 & Joe Williams & Dawson & Rebecca S \\
+118 & 8 & Joe Williams & Krosky & Paula Michele \\
+132 & 8 & Robert Mcfay & O Brien & Erin Terese \\
+147 & 8 & Joseph Miden & Kosove & Daniel Brian \\
+162 & 8 & Joseph Miden & Loevy & Debra L \\
+176 & 8 & James Vogner & Dworzanowski & Gregory William \\
+191 & 8 & James Vogner & Gatto & Julia Lynn \\
+205 & 8 & Jane Doe & Kaye & Peter Mitchell \\
+\end{longtable}
 
 
 
