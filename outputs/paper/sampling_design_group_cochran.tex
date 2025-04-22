@@ -181,7 +181,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\date{April 20, 2025}
+\date{April 22, 2025}
 \title{\bf Michigan Teen Smoking and Drug Use Survey Sample Design}
 \author{
 Kevin Linares\\
@@ -601,35 +601,143 @@ be positively associated with the target variables. For each strata
 calculate the number of schools to sample, denoted as \(n_h\) in Table
 7. We use \(n_h\) to calculated in this Table the sampling interval
 \(k_h = \frac{\sum_{i \ in h} MOS_{hi}}{n_h}\) where \(MOS_{hi}\) is the
-measure of size, total student head-count, for each school \(i\) in
-strata \(h\). The \(k_h\) parameter is an important component of
+measure of size (MOS), total student head-count, for each school \(i\)
+in strata \(h\). The \(k_h\) parameter is an important component of
 systematic sampling to determine how frequently units are selected from
 an ordered list. To conduct this selection, we randomly select a number
 between 1 and \(k_h\) for selecting schools from the list, which is
 captured in Table 7 as \(RN\).
 
-\begin{longtable}[]{@{}cccccc@{}}
+\begin{longtable}[]{@{}ccccc@{}}
 \caption{Evaluating Alternative Clustering Designs}\tabularnewline
 \toprule\noalign{}
-Region & prop\_allocation & n\_h & f\_h & k\_h & RN \\
+Region & prop\_allocation & n\_h & k\_h & RN \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-Region & prop\_allocation & n\_h & f\_h & k\_h & RN \\
+Region & prop\_allocation & n\_h & k\_h & RN \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-1 & 0.0042896 & 1.257973 & 1.257973 & 3561.000 & 3168 \\
-2 & 0.0065941 & 1.933767 & 1.933767 & 2737.000 & 2310 \\
-3 & 0.0103971 & 3.049021 & 3.049021 & 2877.000 & 1321 \\
-4 & 0.0058484 & 1.715096 & 1.715096 & 2427.500 & 131 \\
-5 & 0.0227757 & 6.679161 & 6.679161 & 2701.000 & 2122 \\
-6 & 0.0399126 & 11.704693 & 11.704693 & 2761.083 & 2114 \\
-7 & 0.2312772 & 67.823846 & 67.823846 & 2823.412 & 374 \\
-8 & 0.2274682 & 66.706826 & 66.706826 & 2818.358 & 380 \\
-9 & 0.4514370 & 132.387420 & 132.387420 & 2839.053 & 1673 \\
+1 & 0.0042896 & 1.257973 & 3561.000 & 3168 \\
+2 & 0.0065941 & 1.933767 & 2737.000 & 2310 \\
+3 & 0.0103971 & 3.049021 & 2877.000 & 1321 \\
+4 & 0.0058484 & 1.715096 & 2427.500 & 131 \\
+5 & 0.0227757 & 6.679161 & 2701.000 & 2122 \\
+6 & 0.0399126 & 11.704693 & 2761.083 & 2114 \\
+7 & 0.2312772 & 67.823846 & 2823.412 & 374 \\
+8 & 0.2274682 & 66.706826 & 2818.358 & 380 \\
+9 & 0.4514370 & 132.387420 & 2839.053 & 1673 \\
 \end{longtable}
+
+For each strata we use the random start to select the first school, and
+for stratum with more than one selection we use
+\(RN, RN+k_h, RN+2k_h,...,RN +(n_h-1)\) until we satisfy \(n_h\)
+selection. Our minimum MOS 76.67 is also our \(m_{opt}\) and we use it
+here to determine the minimum number of students in each selected school
+required and if this is not satisfy we perform post-selection linkage.
+The linking is done by first selecting the number of schools in each
+strata. When the next units on the list do not meet the sufficient MOS
+size required we move forward in the list until the first unit that
+meets the minimum requirement is achieved. For all the units that did
+not meet the requirement they are cumulated backwards until a linked
+unit of minimum sufficient size is created. We do this process for all
+strata. Table 8 shows for each region the total number of clusters,
+total schools linked, and total student count.
+
+\begin{longtable}[]{@{}rrrr@{}}
+\toprule\noalign{}
+Region & k\_h & RN & m\_h\_star \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 3561.000 & 3168 & 20.25297 \\
+2 & 2737.000 & 2310 & 15.56652 \\
+3 & 2877.000 & 1321 & 16.36276 \\
+4 & 2427.500 & 131 & 13.80626 \\
+5 & 2701.000 & 2122 & 15.36177 \\
+6 & 2761.083 & 2114 & 15.70349 \\
+7 & 2823.412 & 374 & 16.05798 \\
+8 & 2818.358 & 380 & 16.02924 \\
+9 & 2839.053 & 1673 & 16.14694 \\
+\end{longtable}
+
+\hfill\break
+
+\subsection{\texorpdfstring{\emph{Pseudo Strata
+Method}}{Pseudo Strata Method}}\label{pseudo-strata-method}
+
+The PPeS systematic sampling makes for direct variance estimation
+difficult; therefore, we use the paired selection model to help us
+estimate variance. However, we cannot form a pseudo-stratum from just
+one cluster nor have odd number of clusters, since paired methods
+require at least tow units within a stratum. We collapse stratum that
+have odd number clusters or just one cluster with the adjacent stratum.
+In Table 9 we show collapsed strata and corresponding number of sampling
+error computation units (SECU); we collapsed regions 1 to 3 into stratum
+1, regions 4 to 7 into stratum 2, and left regions 8 and 9 the same. We
+take all of the linked clusters and divide them by two to get the paired
+SECU count. We now have a total of 4 strata in this model, 3 SECUs for
+stratum 1, 103 SECUS for stratum 2, 77 SECUS for stratum 3, and 135
+SECUs for stratum 4 resulting in a total of 318 SECUs across strata.
+
+\begin{longtable}[]{@{}cc@{}}
+\caption{Evaluating Alternative Clustering Designs}\tabularnewline
+\toprule\noalign{}
+Psuedo & SECU \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+Psuedo & SECU \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 3 \\
+2 & 103 \\
+3 & 77 \\
+4 & 135 \\
+\end{longtable}
+
+Taylor Series Linearization Variance Estimation:
+\(\text{For all strata } n_h = 2\)
+
+\[
+\text{var}(r) \approx \frac{1}{\hat{t}_x^2} \left[ \sum_h \text{var}(\hat{t}_{h,y}) + r^2 \sum_h \text{var}(\hat{t}_{h,x}) - 2r \sum_h \text{cov}(\hat{t}_{h,y}, \hat{t}_{h,x}) \right]
+\]
+
+\begin{align*}
+   \text{var}(r) \approx \frac{1}{\hat{t}_x^2} \left[ \sum_h \text{var}(\hat{t}_{h,y}) + r^2 \sum_h      \text{var}(\hat{t}_{h,x}) - 2r \sum_h \text{cov}(\hat{t}_{h,y}, \hat{t}_{h,x}) \right] \\
+   = \frac{1}{\hat{t}_x^2}  \Biggr[  \sum_h (1 - f_h)(\hat{t}_{h,1,y} - \hat{t}_{h,2,y})^2 + \\
+r^2 \sum_h (1 - f_h)(\hat{t}_{h,1,x} - \hat{t}_{h,2,x})^2 - \\
+2r \sum_h (1 - f_h)(\hat{t}_{h,1,y} - \hat{t}_{h,2,y})(\hat{t}_{h,1,x} - \hat{t}_{h,2,x}) \Biggr]
+\end{align*}
+
+\begin{align*}
+1 + 2 = 3 \\
+3 + 2 = 5
+\end{align*}
+
+Students selection sample
+
+We implement the same systematic random sampling for the roster example
+of schools from Region 7. The randomly sampled middle school was from
+Region 7, the MOS for this school was 242, but the actual size is 219.
+This is the formula for calculating overall sampling fraction: \[
+f_h = \frac{n_h MOS_{hi} }{\sum,_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}}
+\] We got the expected sample size of 14.53126, and we rounded it to 15.
+To obtain the expected sample size, we first got the second-stage
+sampling rate is
+\(\text{Sampling Rate} = \frac{m^*_{7}}{MOS_7} = \frac{16.05737}{242} = 0.06635277\),
+and then multiplied the rate by the actual sample size.
+
+To get the sampling interval \(k_hi = Mos_{hi} / n_h = \frac{16}{242}\),
+we choose a random starting number between 1 and \(k_{hi}\), which is
+14.6, then we use the k-interval 146 to conduct the systematic sampling.
+Then we selected the student at the random start position(14) and every
+\(k_{hi}\)-th student thereafter from the ordered roster.
 
 
 

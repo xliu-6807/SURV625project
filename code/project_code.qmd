@@ -408,20 +408,15 @@ m_opt <- MI_school_samples |>
 # Compute proportional allocation of clusters to each stratum
 region_summary <- strata_Prop_allocate |> 
   # Ensure at least 1 cluster per
-  mutate(n_h = round(n_opt * prop_allocation)#,
-           # we need to adjust the last n_h to get an exact 290
-         #n_h = ifelse(n_h == 131, n_h-1, n_h)
-         ) |> 
+  mutate(n_h = n_opt * prop_allocation) |> 
   mutate(N_h = as.double(N_h)) |> 
   group_by(Region) |> 
   reframe(across(where(is.double), ~ sum(.x))) |> 
-  mutate(k_h =  round(M_h / n_h)) |>    # zone size
+  mutate(k_h =  M_h / round(n_h)) |>    # zone size
   # create random start values
   rowwise() |> 
   mutate(RN = sample(1:k_h, 1)) |> 
-  ungroup() |> 
-  mutate_at(vars(prop_allocation, f_h), round, 3)
-
+  ungroup() 
 
 region_summary |> 
   select(Region, prop_allocation, n_h, k_h, RN) |> 
