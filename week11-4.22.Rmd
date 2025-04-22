@@ -1,0 +1,92 @@
+---
+title: "week11-4.22"
+author: "Jianing Zou"
+date: "2025-04-22"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## SM 625: Week 11 Sampling Project Notes
+
+By now, you should have noted from the sampling frame that one approach for sorting the schools within a region is by grade level of the schools (middle, generally including grades 7 and 8, and high, generally including grades 9 through 12). We would want to reduce the chance of a random sample of schools within a region only including students from grades 7 and 8 by sorting our list in this fashion.
+
+This week, you have been provided with the actual classroom rosters from a randomly sampled middle school according to your design (see the file “sample_school_student_list.xls” on Canvas). Suppose that the randomly sampled middle school was from Region 7, and the MOS for this school was 242. At this point, you have determined the $m_h$ needed from Region 7 to maintain epsem overall (see last week’s project notes). Given the actual classroom rosters, what is the actual size of this school? Assuming that this school was not linked with any other schools, what is the sampling rate that you would apply to this school to achieve epsem? And what would your expected actual sample size be, once you apply this rate to the actual roster?
+
+Given your plan for within-school sampling developed last week, describe your approach to selecting the sample at your specified rate, and then implement that technique to actually select the sample. You can provide the resulting sample as an Appendix for your final project, but the selection technique needs to be clearly described in the body of your report. Ultimately, your description of this process should enable readers to understand what would happen to select the sample of students within each sampled school.
+
+-   Selection Technique: Systematic sampling is a suitable technique. For school hi: • Calculate the sampling interval $k_hi = Mos_{hi} / n_h$ Choose a random starting number between 1 and k_hi.
+
+-   Select the student at the random start position and every k_hi-th student thereafter from the ordered roster.
+
+-   If schools are linked due to insufficient numbers, the rosters need to be combined and sampled uniformly.
+
+-   Record unresponsive students and report adjusted weights.
+
+The overall sampling fraction is
+
+$$
+f = \frac{n}{N} = \frac{4,721}{830138}   = .0057
+$$
+
+The inclusion probability for a given student is
+$$
+f_h = \frac{n_h MOS_{hi} }{\sum,_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}}
+$$
+
+The number of students to sample from this school (based on MOS) is:
+
+$$
+m_{hi} = f \cdot M_{hi}
+$$
+
+$$
+\text{Sampling Rate} = \frac{m^*_{7}}{MOS_7} = \frac{16.05737}{242} 
+$$
+
+The actual size is $219$. The sampling rate should be $0.07762557$. The expected actual expected sample size is $17$.
+
+```{r}
+
+library(knitr)
+library(kableExtra)
+library(webshot2)
+
+# Step 1:  Calculate how many students to sample
+f_overall <- 0.0057
+oneschool <- read.csv("schoolframe.csv")
+MOS_7 <- 242
+ACT_MOS_7 <- nrow(oneschool)
+m_h_start_7 <- 16.05737
+
+# Step 2: Sampling rate
+sam_rate <- m_h_start_7/MOS_7
+
+# Step 3: Expected sample size
+m_exp <- sam_rate * ACT_MOS_7
+m_exp_pra <- ceiling(m_exp)
+# Step 2: Calculate sampling interval
+k_interval <- ACT_MOS_7 / m_exp_pra
+round_k_interval <- k_interval*10
+round_mos <- 219*10+9
+
+
+
+# Step 3: Random start between 1 and interval
+set.seed(123)
+start <- sample(1:round_k_interval, 1)
+
+# Step 4: Select every `interval`-th student starting from `start`
+indices <- seq(start, by = round_k_interval, length.out = m_exp_pra)
+true_indices <- floor(indices/10)
+sampled_students <- oneschool[true_indices, ]
+
+# View sampled students
+sampled_students |> 
+  kable()
+
+write.csv(sampled_students, "sampled_students.csv", row.names = FALSE)
+kbl(sampled_students, caption = "Sampled Students") %>%
+  kable_styling() %>%
+  save_kable("sampled_students_table.png")
