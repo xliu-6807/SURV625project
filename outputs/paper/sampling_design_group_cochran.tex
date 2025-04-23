@@ -691,8 +691,8 @@ fraction \(f_h\), which is the same as the overall sampling fraction
 \(k_h\) as follows:
 
 \[
-f_h = \frac{n_h MOS_{hi} }{\sum,_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}}
- = \frac{n_h m^*_h}{\sum_{e \in h}} = m^*_h = f \times k_h
+f_h = \frac{n_h MOS_{hi} }{\sum_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}}
+ = \frac{n_h m^*_h}{\sum_{e \in h}MOS_{hi}} = m^*_h = f \times k_h
 \]
 
 This ensures that when each school is selected with probability
@@ -748,7 +748,25 @@ Region & M\_h\_star & Expected Student & EPSEM Valid \\
 9 & 16.14694 & 2131.39634 & True \\
 \end{longtable}
 
-\subsection{}\label{section}
+\subsection{Student Selection Sample}\label{student-selection-sample}
+
+We implement the same systematic random sampling for the roster example
+of schools from Region 7. The randomly sampled middle school was from
+Region 7, the MOS for this school was 242, but the actual size is 219.
+This is the formula for calculating overall sampling fraction:
+\(f_h = \frac{n_h MOS_{hi} }{\sum_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}}\).
+We got the expected sample size of 14.53126, and we rounded it to 15. To
+obtain the expected sample size, we first got the second-stage sampling
+rate is
+\(\text{Sampling Rate} = \frac{m^*_{7}}{MOS_7} = \frac{16.05737}{242} = 0.06635277\),
+and then multiplied the rate by the actual sample size.
+
+To get the sampling interval \(k_hi = Mos_{hi} / n_h = \frac{16}{242}\),
+we choose a random starting number between 1 and \(k_{hi}\), which is
+14.6, then we use the k-interval 146 to conduct the systematic sampling.
+Then we selected the student at the random start position(14) and every
+\(k_{hi}\)-th student thereafter from the ordered roster. We print the
+roaster of names in the Appendix to save space here.
 
 \section{Estimation Plan}\label{estimation-plan}
 
@@ -787,7 +805,8 @@ Psuedo & SECU \\
 4 & 135 \\
 \end{longtable}
 
-\emph{Variance Estimation}
+\subsubsection{\texorpdfstring{\emph{Variance
+Estimation}}{Variance Estimation}}\label{variance-estimation}
 
 In this study, we need to estimate the proportion who have ever smoked,
 the proportion who have ever used marijuana, and the mean age at first
@@ -850,8 +869,7 @@ contain a very small number of low-income students or no low-income
 students, thus, not meet the expected subclass size per cluster (
 \(\text{expected }b^* \text{subclass pct} = 76.66519 \times 0.20 = 15.33304\)).
 In that case, we might link undersized units to form linked units of the
-minimum sufficient size. We print the roaster of names in the Appendix
-to save space here.
+minimum sufficient size.
 
 In conclusion, this report details a robust and statistically efficient
 two-stage stratified cluster sampling design tailored to the MDE's need
