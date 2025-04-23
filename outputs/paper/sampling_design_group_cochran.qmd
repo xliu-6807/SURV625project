@@ -632,7 +632,7 @@ f_overall <- 0.0057
 oneschool <- read_csv("~/work/d/SURV625project/data/schoolframe.csv")
 MOS_7 <- 242
 ACT_MOS_7 <- nrow(oneschool)
-m_h_start_7 <- 16.05737
+m_h_start_7 <- 16.05798
 
 # Step 2: Sampling rate
 sam_rate <- m_h_start_7/MOS_7
