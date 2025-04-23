@@ -329,7 +329,7 @@ while (nrow(clusters_to_relink) > 0) {
 
 We assume rosters are made available by the school administration at the time of data collection.
 These rosters are ordered and formatted uniformly to facilitate systematic sampling.
-To maintain equal probability of selection (epsem) across all strata, we computed the required number of students to be sampled per selected school, denoted as $m^*_h$ , based on the within-strata sampling fraction $f_h$, which is the same as the overall sampling fraction $f$ for all $h$, and the stratum-specific PPS sampling interval $k_h$ as follows, $f_h = \frac{n_h MOS_{hi} }{\sum_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}} = \frac{n_h m^*_h}{\sum_{e \in h}MOS_{hi}} = m^*_h = f \times k_h$.
+To maintain equal probability of selection (epsem) across all strata, we computed the required number of students to be sampled per selected school, denoted as $m^*_h$ , based on the within-strata sampling fraction $f_h$, which is the same as the overall sampling fraction $f$ for all $h$, and the stratum-specific PPS sampling interval $k_h$ as follows, $f_h = \frac{n_h MOS_{hi} }{\sum_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}} = \frac{n_h m^*_h}{\sum_{e \in h}MOS_{hi}} \Rightarrow m^*_h = f \times k_h$.
 This ensures that when each school is selected with probability proportional to its MOS and then students are sampled within school at a fixed rate $\frac{m^*_h}{MOS_{hi}}$, the overall inclusion probability for any student is, $\pi_{i} = \frac{n_h \times MOS_{hi}}{\sum MOS_{hi}} \times \frac{m^*_h}{MOS_{hi}} = \frac{n_h m^*_h}{\sum MOS_h}$.
 Each student has the same selection probability within the state and within region $h$, satisfying the epsem condition.
 Table 3 summarizes the first stage stratification and selection for two strata.
@@ -605,9 +605,11 @@ final_clusters |>
 
 \newpage
 
-## Appendix 8: Within-School Sampling Rate for 2 Strata
+## Appendix 8: Within-School Sampling Interval for 2 Strata
 
 We show the selection of schools below after selection for two strata and within-school sampling rate.
+The within-school sampling interval was calculated as the total student count divided by the target sample size (m_h_star).
+Students were then selected systematically using a random start between 1 and the interval.
 
 ```{r}
 
