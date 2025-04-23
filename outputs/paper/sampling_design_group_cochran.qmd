@@ -15,7 +15,7 @@ author:
     affiliations:
       - name: University of Maryland
 abstract: |
-  
+  This report outlines a two-stage stratified cluster sampling design developed for the Michigan Department of Education to monitor smoking and drug use among students in grades 7-12 statewide. The design addresses the need for cost-effective, statistically sound estimates at both the state and regional levels, meeting specified precision targets (CV=0.05) within a $500,000 budget. Schools were stratified into nine regions and selected with probability proportional to size (PPeS), followed by systematic selection of students within schools. The final design targets approximately 88 schools and 4,721 students, incorporating adjustments for non-response and procedures for handling undersized schools to maintain equal selection probabilities. The report details allocation, selection methods, and an estimation plan using a paired selection model for variance calculation.
   
 editor: 
   markdown: 
@@ -522,6 +522,8 @@ In conclusion, this report details a robust and statistically efficient two-stag
 By employing stratification across educational regions, probability proportional to size selection for schools, and systematic sampling of students within schools, the design ensures representative statewide and regional estimates while adhering to budget constraints.
 The chosen parameters, including an anticipated sample of approximately 88 schools and 4,721 students, are optimized to achieve the required precision for key variables after accounting for anticipated non-response.
 The outlined procedures for selection, including linkage for smaller schools, and the comprehensive estimation plan provide a clear roadmap for survey implementation and analysis, ultimately delivering a cost-effective solution capable of generating the critical data required by the MDE.
+
+\newpage
 
 ## Appendix 1: Students Selected From One School.
 
