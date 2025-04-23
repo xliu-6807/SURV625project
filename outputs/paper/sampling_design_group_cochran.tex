@@ -181,7 +181,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\date{April 22, 2025}
+\date{April 23, 2025}
 \title{\bf Michigan Teen Smoking and Drug Use Survey Sample Design}
 \author{
 Kevin Linares\\
@@ -643,47 +643,119 @@ size required we move forward in the list until the first unit that
 meets the minimum requirement is achieved. For all the units that did
 not meet the requirement they are cumulated backwards until a linked
 unit of minimum sufficient size is created. We do this process for all
-strata. Table 8 shows for each region the total number of clusters,
-total schools linked, and total student count.
+strata. Table 8 shows for each strata the total number of clusters, how
+many totaled schools linked and the total number of students.
 
-\begin{longtable}[]{@{}rrrr@{}}
+\begin{longtable}[]{@{}cccc@{}}
+\caption{Linkage of Schools for Stage 1 Selection}\tabularnewline
 \toprule\noalign{}
-Region & k\_h & RN & m\_h\_star \\
+Region & Clusters & Schools & MOS \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+Region & Clusters & Schools & MOS \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-1 & 3561.000 & 3168 & 20.25297 \\
-2 & 2737.000 & 2310 & 15.56652 \\
-3 & 2877.000 & 1321 & 16.36276 \\
-4 & 2427.500 & 131 & 13.80626 \\
-5 & 2701.000 & 2122 & 15.36177 \\
-6 & 2761.083 & 2114 & 15.70349 \\
-7 & 2823.412 & 374 & 16.05798 \\
-8 & 2818.358 & 380 & 16.02924 \\
-9 & 2839.053 & 1673 & 16.14694 \\
+1 & 1 & 1 & 430 \\
+2 & 2 & 2 & 933 \\
+3 & 3 & 3 & 1552 \\
+4 & 10 & 14 & 772 \\
+5 & 7 & 7 & 4400 \\
+6 & 12 & 12 & 8202 \\
+7 & 177 & 281 & 52360 \\
+8 & 154 & 224 & 59827 \\
+9 & 270 & 379 & 141443 \\
 \end{longtable}
 
-\hfill\break
+\section{Stage 2 Selection}\label{stage-2-selection}
 
-\subsection{\texorpdfstring{\emph{Pseudo Strata
-Method}}{Pseudo Strata Method}}\label{pseudo-strata-method}
+To maintain equal probability of selection (epsem) across all strata, we
+computed the required number of students to be sampled per selected
+school, denoted as \(m^*_h\) , based on the within-strata sampling
+fraction \(f_h\), which is the same as the overall sampling fraction
+\(f\) for all \(h\), and the stratum-specific PPS sampling interval
+\(k_h\) as follows:
 
-The PPeS systematic sampling makes for direct variance estimation
-difficult; therefore, we use the paired selection model to help us
-estimate variance. However, we cannot form a pseudo-stratum from just
-one cluster nor have odd number of clusters, since paired methods
-require at least tow units within a stratum. A key constraint for this
-approach is that each stratum must contain at least two independent
-variance units. We collapse stratum that have odd number clusters or
-just one cluster with the adjacent stratum. In Table 9 we show collapsed
-strata and corresponding number of sampling error computation units
-(SECU); we collapsed regions 1 to 3 into stratum 1, regions 4 to 7 into
-stratum 2, and left regions 8 and 9 the same. We take all of the linked
-clusters and divide them by two to get the paired SECU count. We now
-have a total of 4 strata in this model, 3 SECUs for stratum 1, 103 SECUS
-for stratum 2, 77 SECUS for stratum 3, and 135 SECUs for stratum 4
-resulting in a total of 318 SECUs across strata.
+\[
+f_h = \frac{n_h MOS_{hi} }{\sum,_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}}
+ = \frac{n_h m^*_h}{\sum_{e \in h}} = m^*_h = f \times k_h
+\]
+
+This ensures that when each school is selected with probability
+proportional to its MOS and then students are sampled within school at a
+fixed rate \(\frac{m^*_h}{MOS_{hi}}\), the overall inclusion probability
+for any student is:
+
+\[
+\pi_{i} = \frac{n_h \times MOS_{hi}}{\sum MOS_{hi}} \times \frac{m^*_h}{MOS_{hi}} = \frac{n_h m^*_h}{\sum MOS_h} 
+\]Each student has the same selection probability within the state and
+within region \(h\), satisfying the epsem condition.
+
+\subsection{\texorpdfstring{\emph{Undersized Schools
+Linking}}{Undersized Schools Linking}}\label{undersized-schools-linking}
+
+In cases where a selected school had fewer students than the desired
+cluster size \(m^*_h\), the within-school sampling rate would exceed
+1.0, making the design unfeasible. To address this, and to ensured that
+the effective number of completed questionnaires per school meets the
+targets \(m^*_h\), we linked undersized schools with nearby schools when
+their MOS was less than \(\frac{m^*_h}{r}\), where \(r\) is the expected
+student response rate (70\%). This operational rule preserves
+feasibility without altering theoretical inclusion probabilities. The
+within-school sampling rate remains \(\frac{m^*_h}{MOS_{hi}}\),
+maintaining epsem across students. For example, 5 small schools in
+Region 4 were linked to form a cluster of 10th meeting the required
+sample size of 19.729. Table 9 shows the calculated \(m^*_h\), the
+number of expected students, and the epsem validation for each of the
+nine regions. These totals confirm that the expected completed sample
+size (sum ≈ 4,721) aligns with the original plan, and the design remains
+epsem-compliant across all regions.
+
+\begin{longtable}[]{@{}cccc@{}}
+\caption{Stage 2 Selection of Students Within Strata}\tabularnewline
+\toprule\noalign{}
+Region & M\_h\_star & Expected Student & EPSEM Valid \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+Region & M\_h\_star & Expected Student & EPSEM Valid \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1 & 20.25297 & 20.25297 & True \\
+2 & 15.56652 & 31.13304 & True \\
+3 & 16.36276 & 49.08829 & True \\
+4 & 13.80626 & 27.61252 & True \\
+5 & 15.36177 & 107.53242 & True \\
+6 & 15.70349 & 188.44193 & True \\
+7 & 16.05798 & 1091.94286 & True \\
+8 & 16.02924 & 1073.95918 & True \\
+9 & 16.14694 & 2131.39634 & True \\
+\end{longtable}
+
+\subsection{}\label{section}
+
+\section{Estimation Plan}\label{estimation-plan}
+
+For this proposal, we use the paired selection model to help us estimate
+variance. However, we cannot form a pseudo-stratum from just one cluster
+nor have odd number of clusters, since paired methods require at least
+tow units within a stratum. A key constraint for this approach is that
+each stratum must contain at least two independent variance units. We
+collapse stratum that have odd number clusters or just one cluster with
+the adjacent stratum. In Table 10 we show collapsed strata and
+corresponding number of sampling error computation units (SECU); we
+collapsed regions 1 to 3 into stratum 1, regions 4 to 7 into stratum 2,
+and left regions 8 and 9 the same. We take all of the linked clusters
+and divide them by two to get the paired SECU count. We now have a total
+of 4 strata in this model, 3 SECUs for stratum 1, 103 SECUS for stratum
+2, 77 SECUS for stratum 3, and 135 SECUs for stratum 4 resulting in a
+total of 318 SECUs across strata. In our estimation plan, each sampled
+unit (student) is assigned a stratum code indicating the explicit
+sampling stratum from which its PSU (clusters) was drawn.
 
 \begin{longtable}[]{@{}cc@{}}
 \caption{Evaluating Alternative Clustering Designs}\tabularnewline
@@ -703,93 +775,86 @@ Psuedo & SECU \\
 4 & 135 \\
 \end{longtable}
 
-\emph{Students selection sample}
+\emph{Variance Estimation}
 
-We implement the same systematic random sampling for the roster example
-of schools from Region 7. The randomly sampled middle school was from
-Region 7, the MOS for this school was 242, but the actual size is 219.
-This is the formula for calculating overall sampling fraction: \[
-f_h = \frac{n_h MOS_{hi} }{\sum,_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}}
-\] We got the expected sample size of 14.53126, and we rounded it to 15.
-To obtain the expected sample size, we first got the second-stage
-sampling rate is
-\(\text{Sampling Rate} = \frac{m^*_{7}}{MOS_7} = \frac{16.05737}{242} = 0.06635277\),
-and then multiplied the rate by the actual sample size.
+In this study, we need to estimate the proportion who have ever smoked,
+the proportion who have ever used marijuana, and the mean age at first
+use of cigarettes or marijuana. We did not consider using weight here
+since we maintain epsem design through the whole sampling process, which
+means every student has the same probability of being selected. However,
+in practice, we need to consider the response rate(the response rate
+among schools will be 30 percent, and the response rate among teenagers
+within schools will be 70 percent), which we should adjust our weight in
+design based on the response rate when conducting variance estimation.
+We decided to use Taylor Series Linearization to estimate the ratio
+estimator, which is approximated as: \(\text{For all strata } n_h = 2\)
 
-To get the sampling interval \(k_hi = Mos_{hi} / n_h = \frac{16}{242}\),
-we choose a random starting number between 1 and \(k_{hi}\), which is
-14.6, then we use the k-interval 146 to conduct the systematic sampling.
-Then we selected the student at the random start position(14) and every
-\(k_{hi}\)-th student thereafter from the ordered roster. We print the
-roaster of names in the Appendix to save space here.
+\[
+\text{var}(r) \approx \frac{1}{\hat{t}_x^2} \left[ \sum_h \text{var}(\hat{t}_{h,y}) + r^2 \sum_h \text{var}(\hat{t}_{h,x}) - 2r \sum_h \text{cov}(\hat{t}_{h,y}, \hat{t}_{h,x}) \right]
+\]
 
-\subsection{\texorpdfstring{\emph{Sampling Error Calculation
-Model}}{Sampling Error Calculation Model}}\label{sampling-error-calculation-model}
+The general estimator used is the ratio estimator:
+\(\hat{r} = \frac{\hat{t}_y}{\hat{t}_x}\)
 
-Our design resulted in 318 paired units of PSUs, used for variance
-estimation. These SECU pairs were formed by grouping sampled schools
-within collapsed regions to meet minimum size thresholds. The paired
-difference method requires at least two SECUs per variance stratum, and
-collapsing ensured that this condition was met in all cases. The degrees
-of freedom for variance estimation are calculated as the number of SECUs
-minus the number of collapsed strata, \(df=a-H=318-4=314\).
+\begin{itemize}
+\item
+  \(\hat{t}_y\): estimated total for the numerator variable(e.g., number
+  of students who smoked)
+\item
+  \(\hat{t}_x\): estimated total for the denominator(e.g., total
+  eligible students)
+\item
+  \(\text{var}(\hat{t}_{h,y})\): variance of the numerator total within
+  stratum \(h\)
+\item
+  \(\text{var}(\hat{t}_{h,x})\):variance of the denominator total within
+  stratum \(h\)
+\item
+  \(\text{cov}(\hat{t}{h,y}, \hat{t}{h,x})\): covariance between
+  numerator and denominator totals within stratum \(h\)
+\end{itemize}
 
-To estimate the variance of a ratio estimator (e.g., the proportion of
-students who smoked), we applied Taylor Series Linearization with paired
-SECUs. For n\_h = 2 in each stratum, the variance of the ratio =
-\(\frac{t_y}/{t_x}\) was approximated as:
+\subsubsection{\texorpdfstring{\emph{Confidence
+Interval}}{Confidence Interval}}\label{confidence-interval}
 
-\begin{align*}
-   \text{var}(r) \approx \frac{1}{\hat{t}_x^2} \left[ \sum_h \text{var}(\hat{t}_{h,y}) + r^2 \sum_h      \text{var}(\hat{t}_{h,x}) - 2r \sum_h \text{cov}(\hat{t}_{h,y}, \hat{t}_{h,x}) \right] \\
-   = \frac{1}{\hat{t}_x^2}  \Biggr[  \sum_h (1 - f_h)(\hat{t}_{h,1,y} - \hat{t}_{h,2,y})^2 + \\
-r^2 \sum_h (1 - f_h)(\hat{t}_{h,1,x} - \hat{t}_{h,2,x})^2 - \\
-2r \sum_h (1 - f_h)(\hat{t}_{h,1,y} - \hat{t}_{h,2,y})(\hat{t}_{h,1,x} - \hat{t}_{h,2,x}) \Biggr]
-\end{align*}
-
-In our case, the estimated variance across SECU pairs was var\_estimate
-= 0.00514. From this estimate we estimate the standard error (SE) was as
-\(se = \sqrt{0.00514} = 0.07179\). With degrees of freedom \(df=314\),
-the 95\% confidence interval was calculated using the t-distribution:
-\((0.0588 , 0.3403)\).
-
-\subsubsection{\texorpdfstring{\emph{Estimator Formula and
-Weighting}}{Estimator Formula and Weighting}}\label{estimator-formula-and-weighting}
-
-The estimator for the proportion of students with a given trait (e.g.,
-smoking behavior) is computed as a weighted average. The formula used is
-\(\hat{p} = \frac{\sum w_{hij} y_{hij}}{w_{hij}}\). In this equation,\$
-y\_\{hij\} = 1\$ if student \(j\) in school \(i\) within stratum \(h\)
-has the characteristic of interest, and \(y_{hij} = 0\) otherwise. The
-term \(w_{hij}\) represents the final weight assigned to each student
-and reflects the product of several adjustments. These include the
-inverse of the probability of selection, school-level and student-level
-nonresponse adjustments, and any corrections for second-stage linking or
-operational deviations during data collection.
-
-Although the original design was structured to be equal probability of
-selection (epsem), in practice, weights are required. This is due to
-observed differences in participation and inclusion at both the school
-and student levels. Specifically, weights correct for approximately 30\%
-nonresponse at the school level and 70\% nonresponse at the student
-level. Thus, while our estimator maintains design-based integrity,
-proper weighting is essential for unbiased inference.
+A 95\% confidence interval for the estimated proportion and mean
+\(\hat{r}\) is given by:
+\(\hat{r} \pm t_{df, 0.975} \cdot \text{SE}(\hat{r})\), where,
+\(SE(\hat{r}) = \sqrt{\text{Var}(\hat{r})}\), and the df is equal to the
+number of SECUs minus the number of strata, which is 318-4 = 314. We
+conducted a simulation of the variance estimation of the proportion of
+students who ever smoked by applying the variance estimation formula,
+and we got: Ratio Estimator = 0.2505455, SE = 0.00003422286, 95\%
+confidence interval {[}0.2504782, 0.2506129{]}.
 
 \subsubsection{\texorpdfstring{\emph{Subclass
 Estimation}}{Subclass Estimation}}\label{subclass-estimation}
 
-The client requested reliable estimation for a 20\% population subgroup.
-To evaluate the adequacy of our design for supporting such subclass
-estimates, we calculated the expected number of completes per SECU,
-denoted b*, which was approximately 76.67. Assuming a 20\% subclass
-size, the expected number of observations per SECU for the subgroup is
-the expected subclass per SECU = \(0.20 \ times 76.68 = 15.3\). This
-value exceeds the minimum recommended threshold of 10, which is
-generally considered sufficient for reliable variance estimation at the
-subgroup level. Therefore, we conclude that confidence intervals for
-subclass means or proportions can be computed using the same paired SECU
-difference method, and the degrees of freedom remain the same.
+For the 20\% subgroup, we used the same estimation and variance
+formulas, but applied them to a subset of the data that reflects 20\% of
+the full population(lower-income households). However, the low-income
+students are only 20\% of the population, which means some SECUs may
+contain a very small number of low-income students or no low-income
+students, thus, not meet the expected subclass size per cluster (
+\(\text{expected }b^* \text{subclass pct} = 76.66519 \times 0.20 = 15.33304\)).
+In that case, we might link undersized units to form linked units of the
+minimum sufficient size. We print the roaster of names in the Appendix
+to save space here.
 
-\newpage
+In conclusion, this report details a robust and statistically efficient
+two-stage stratified cluster sampling design tailored to the MDE's need
+for monitoring teenage smoking and drug use. By employing stratification
+across educational regions, probability proportional to size selection
+for schools, and systematic sampling of students within schools, the
+design ensures representative statewide and regional estimates while
+adhering to budget constraints. The chosen parameters, including an
+anticipated sample of approximately 88 schools and 4,721 students, are
+optimized to achieve the required precision for key variables after
+accounting for anticipated non-response. The outlined procedures for
+selection, including linkage for smaller schools, and the comprehensive
+estimation plan provide a clear roadmap for survey implementation and
+analysis, ultimately delivering a cost-effective solution capable of
+generating the critical data required by the MDE.
 
 \section{Appendix 1: Students Selected From One
 School.}\label{appendix-1-students-selected-from-one-school.}
