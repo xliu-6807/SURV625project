@@ -1,0 +1,138 @@
+---
+title: "week13"
+author: "Jianing Zou"
+date: "2025-04-22"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Week 13
+
+1.  Based on the final sample design that your team has developed, formulate a sampling error calculation model that users of your data will be able to employ to estimate sampling variance. That is, what stratum codes will you provide to users? How will you form sampling error computation units (SECUs)? How many SECUs will there be per stratum? What are expected sample sizes per SECU?
+
+```{r}
+# Week 13 - Q1: Sampling Error Calculation Model
+final_clusters %>%
+  group_by(Region) %>%
+  summarise(n_clusters = n_distinct(cluster_id)) %>%
+  arrange(Region)
+
+# Region collpasing
+final_clusters <- final_clusters %>%
+  mutate(CollapsedRegion = case_when(
+    Region %in% c(1, 2, 3) ~ "Region 1",
+    Region %in% c(4, 5, 6, 7) ~ "Region 2",
+    Region %in% c(8) ~ "Region 3",
+    Region %in% c(9) ~ "Region 4",
+    TRUE ~ paste0("Region", Region)  # keep other regions unchanged
+  ))
+
+# Compute pseudo strata
+pseudo_strata_df <- final_clusters %>%
+  arrange(CollapsedRegion, cluster_id) %>%
+  group_by(CollapsedRegion) %>%
+  mutate(pseudo_stratum_id = rep(1:(n() %/% 2 + n() %% 2), each = 2)[1:n()]) %>%
+  ungroup()
+
+# Compute SECUS per collapsed region
+secus_per_region <- pseudo_strata_df %>%
+  group_by(CollapsedRegion, pseudo_stratum_id) %>%
+  summarise(n_secus = n(), .groups = "drop") %>%
+  group_by(CollapsedRegion) %>%
+  summarise(Total_SECUs = sum(n_secus)/2, .groups = "drop")
+
+# View result
+print(secus_per_region)
+
+# Example data frame (replace with your actual output)
+secus_per_region <- data.frame(
+  CollapsedRegion = c("Region 1", "Region 2", "Region 3", "Region 4"),
+  Total_SECUs = c(3, 103, 77, 135)
+)
+
+# Display using kable
+kable(secus_per_region, col.names = c("Collapsed Region", "Total SECUs"))
+```
+
+2.  Describe the variance estimation procedures that one would employ to form a confidence interval for one of the three key descriptive parameters. This should build on your proposed SECUs from the first task. How many degrees of freedom will your sampling error calculation model afford? In addition, write the formula for one of the estimated proportions or means; are weights necessary in forming this estimator, given your sample design? That is, is your design epsem, or will weights be needed to compensate for unequal probabilities of selection?
+
+```{r, results="asis"}
+# Stimulation of the variance estimation of proportion of students who ever smoked 
+set.seed(2025)
+df <- 314  # degrees of freedom = G - 1
+r_true <- 0.25  # assumed ratio (e.g., 25% smoked)
+
+# Number of SECUs per region
+num_secus <- c("Region 1" = 3, "Region 2" = 103, "Region 3" = 77, "Region 4" = 135)
+
+# Simulate totals
+sim_data <- purrr::map2_df(names(num_secus), num_secus, function(region, n) {
+  t_yh <- runif(n, 100, 300)
+  t_xh <- t_yh / r_true + rnorm(n, 0, 20)
+  tibble(Region = region, t_yh = t_yh, t_xh = t_xh)
+})
+
+# Estimate global totals and the ratio
+t_y_hat <- sum(sim_data$t_yh)
+t_x_hat <- sum(sim_data$t_xh)
+r_hat <- t_y_hat / t_x_hat
+
+# Compute variance and covariance components
+var_ty <- sim_data |> group_by(Region) |> summarise(var = var(t_yh)) |> pull(var) |> sum()
+var_tx <- sim_data |> group_by(Region) |> summarise(var = var(t_xh)) |> pull(var) |> sum()
+cov_tyx <- sim_data |> group_by(Region) |> summarise(cov = cov(t_yh, t_xh)) |> pull(cov) |> sum()
+
+# Variance estimation
+var_r <- (1 / t_x_hat^2) * (var_ty + r_hat^2 * var_tx - 2 * r_hat * cov_tyx)
+se_r <- sqrt(var_r)
+
+# Confidence interval
+t_crit <- qt(0.975, df = df)
+CI_lower <- r_hat - t_crit * se_r
+CI_upper <- r_hat + t_crit * se_r
+
+# Output
+tibble(
+  `Ratio Estimate (r)` = r_hat,
+  `Standard Error (SE)` = se_r,
+  `95% CI Lower` = CI_lower,
+  `95% CI Upper` = CI_upper
+)
+```
+
+\newpage
+
+```{r, echo=FALSE}
+
+# -------------------------------
+# Weighting Explanation (EPSEM or Not)
+# -------------------------------
+cat("⚖️ Are weights needed.\n")
+cat("1. Although the design aimed for EPSEM, weights are necessary in practice.")
+cat("2. Adjustments are needed for:\n")
+cat("   - School-level nonresponse (30%)\n")
+cat("   - Student-level nonresponse (70%)\n")
+cat("3. Weights also adjust for second-stage linking or other deviations during implementation.\n")
+
+```
+
+\newpage
+
+3.  Keep in mind the client’s request for estimates and inference related to a 20% subclass. Will confidence intervals for the subclass be formed in the same way? Are your SECUs large enough to accommodate this request?
+
+```{r}
+b_star <- m_opt
+total_secus <- 318            # Number of SECUs (schools)
+expected_b_star <- b_star         # Expected completes per SECU
+subclass_pct <- 0.20          # Subclass proportion (20%)
+df <- total_secus         # Degrees of freedom remains the same
+
+# Estimate expected subclass size per SECU
+expected_subclass_per_secu <- expected_b_star * subclass_pct
+
+```
+
+
