@@ -393,7 +393,7 @@ This is the formula for calculating overall sampling fraction: $f_h = \frac{n_h 
 We got the expected sample size of 14.53126, and we rounded it to 15.
 To obtain the expected sample size, we first got the second-stage sampling rate is $\text{Sampling Rate} = \frac{m^*_{7}}{MOS_7} = \frac{16.05737}{242} = 0.06635277$, and then multiplied the rate by the actual sample size.
 
-To get the sampling interval $k_{hi} = Mos_{hi} / n_{hi} = \frac{219}{15}$, we choose a random starting number between 1 and $k_{hi}$, which is 14.6, then we use the k-interval 146 to conduct the systematic sampling.
+To get the sampling interval $k_{hi} = MOS_{hi} / m^*_{h} = \frac{219}{15}$, we choose a random starting number between 1 and $k_{hi}$, which is 14.6, then we use the k-interval 146 to conduct the systematic sampling.
 Then we selected the student at the random start position (14) and every $k_{hi}$-th student thereafter from the ordered roster.
 The roaster of names is in Appendix 9.
 
@@ -437,7 +437,7 @@ linked_schools <- linked_schools %>%
 In this study, we need to estimate the proportion who have ever smoked, the proportion who have ever used marijuana, and the mean age at first use of cigarettes or marijuana.
 We did not consider using weight here since we maintained epsem design through the whole sampling process, which means every student has the same probability of being selected.
 However, in practice, we need to consider the response rate(the response rate among schools will be 30 percent, and the response rate among teenagers within schools will be 70 percent), which we should adjust our weight in design based on the response rate when conducting variance estimation.
-We decided to use Taylor Series Linearization to estimate the ratio estimator, which is approximated as: $\text{For all strata } n_h = 2$
+We decided to use Taylor Series Linearization to estimate the ratio estimator, which is approximated as: $\text{For all strata } n_h = 2$.
 
 $$
 \text{var}(r) \approx \frac{1}{\hat{t}_x^2} \left[ \sum_h \text{var}(\hat{t}_{h,y}) + r^2 \sum_h \text{var}(\hat{t}_{h,x}) - 2r \sum_h \text{cov}(\hat{t}_{h,y}, \hat{t}_{h,x}) \right]
@@ -632,7 +632,7 @@ f_overall <- 0.0057
 oneschool <- read_csv("~/work/d/SURV625project/data/schoolframe.csv")
 MOS_7 <- 242
 ACT_MOS_7 <- nrow(oneschool)
-m_h_start_7 <- 16.05737
+m_h_start_7 <- 16.05798
 
 # Step 2: Sampling rate
 sam_rate <- m_h_start_7/MOS_7

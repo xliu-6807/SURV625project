@@ -521,7 +521,7 @@ rate is
 and then multiplied the rate by the actual sample size.
 
 To get the sampling interval
-\(k_{hi} = Mos_{hi} / n_{hi} = \frac{219}{15}\), we choose a random
+\(k_{hi} = MOS_{hi} / m^*_{h} = \frac{219}{15}\), we choose a random
 starting number between 1 and \(k_{hi}\), which is 14.6, then we use the
 k-interval 146 to conduct the systematic sampling. Then we selected the
 student at the random start position (14) and every \(k_{hi}\)-th
@@ -561,7 +561,7 @@ teenagers within schools will be 70 percent), which we should adjust our
 weight in design based on the response rate when conducting variance
 estimation. We decided to use Taylor Series Linearization to estimate
 the ratio estimator, which is approximated as:
-\(\text{For all strata } n_h = 2\)
+\(\text{For all strata } n_h = 2\).
 
 \[
 \text{var}(r) \approx \frac{1}{\hat{t}_x^2} \left[ \sum_h \text{var}(\hat{t}_{h,y}) + r^2 \sum_h \text{var}(\hat{t}_{h,x}) - 2r \sum_h \text{cov}(\hat{t}_{h,y}, \hat{t}_{h,x}) \right]
