@@ -404,7 +404,6 @@ The roaster of names is in Appendix 8.
 We propose using the paired difference method and create pseudo-strata to estimate variance by using Taylor Series Linearization.
 However, since we cannot form a pseudo-stratum from one cluster nor have an odd number of clusters, each pseudo-stratum requires at least two units.
 We combine strata that have odd-number clusters or just one cluster with the adjacent stratum.
-We constructed 318 pseudo-strata, each containing a pair of sampled PSUs.
 We collapse region 1 to 3, then we randomly group odd and even selections of units in the stratum into two sampling error computation units (SECUs).
 For regions 4 to 7 we also collapse them, then group them into two SECUs.
 For region 8 and region 9, we keep them the same, each with 2 SECUs.
@@ -440,8 +439,6 @@ In this study, we need to estimate the proportion who have ever smoked, the prop
 We did not consider using weight here since we maintain epsem design through the whole sampling process, which means every student has the same probability of being selected.However, in practice, we need to consider the response rate (e.g., the response rate among schools will be 30 percent, and the response rate among teenagers within schools will be 70 percent), which we should adjust our weight in design based on the response rate when conducting variance estimation.
 We decided to use Taylor Series Linearization to estimate the ratio estimator, which is approximated as $\text{For all strata, } n_h = 2$.
 
-
-
 $$
 \text{var}(r) \approx \frac{1}{\hat{t}_x^2} \left[ \sum_h \text{var}(\hat{t}_{h,y}) + r^2 \sum_h \text{var}(\hat{t}_{h,x}) - 2r \sum_h \text{cov}(\hat{t}_{h,y}, \hat{t}_{h,x}) \right]
 $$
@@ -460,12 +457,18 @@ The general estimator used is the ratio estimator: $\hat{r} = \frac{\hat{t}_y}{\
 
 #### *Confidence Interval*
 
-A 95% confidence interval for the estimated proportion and mean $\hat{r}$ is given by: $\hat{r} \pm t_{df, 0.975} \cdot \text{SE}(\hat{r})$, where, $SE(\hat{r}) = \sqrt{\text{Var}(\hat{r})}$, and the df is equal to the number of pseudo strata which is 8. We conducted a simulation of the variance estimation of the proportion of students who ever smoked by applying the variance estimation formula, and we estimate the ratio to be 0.249946, SE = 0.000055, 95% confidence interval \[0.249815, 0.250069\].
+A 95% confidence interval for the estimated proportion and mean $\hat{r}$ is given by: $\hat{r} \pm t_{df, 0.975} \cdot \text{SE}(\hat{r})$, where, $SE(\hat{r}) = \sqrt{\text{Var}(\hat{r})}$, and the df is equal to the number of pseudo strata which is 8.
+We conducted a simulation of the variance estimation of the proportion of students who ever smoked by applying the variance estimation formula, and we estimate the ratio to be 0.249946, SE = 0.000055, 95% confidence interval \[0.249815, 0.250069\].
 
 #### *Subclass Estimation*
 
-For the 20\% subgroup, we used the same estimation and variance formulas, but applied them to a subset of the data that reflects 20\% of the full population(lower-income households). However,  some SECUs may contain a very small number of students. The expected sample size for this subgroup is 944.2 ($\text{total sample size } \times prop = 4721 \times 0.2 = 944.2$), and the expected subclass size per cluster is 15.33304 ( $E[b^{*}] \times subclass_{pct} = 76.66519 \times 0.20 = 15.33304$). Besides, some strata contain only one SECU, and which cannot allow for variance estimation. If too few SECUs contribute, degrees of freedom could be too low, affecting reliability. Low-income students might not be spread evenly across all PSUs, and if only a small number of students in the subclass are sampled per stratum, variance estimates will be unstable or undefined. Therefore, the design might not accommodate accurate inference for the 20\% subclass group.
-
+For the 20% subgroup, we used the same estimation and variance formulas, but applied them to a subset of the data that reflects 20% of the full population(lower-income households).
+However, some SECUs may contain a very small number of students.
+The expected sample size for this subgroup is 944.2 ($\text{total sample size } \times prop = 4721 \times 0.2 = 944.2$), and the expected subclass size per cluster is 15.33304 ( $E[b^{*}] \times subclass_{pct} = 76.66519 \times 0.20 = 15.33304$).
+Besides, some strata contain only one SECU, and which cannot allow for variance estimation.
+If too few SECUs contribute, degrees of freedom could be too low, affecting reliability.
+Low-income students might not be spread evenly across all PSUs, and if only a small number of students in the subclass are sampled per stratum, variance estimates will be unstable or undefined.
+Therefore, the design might not accommodate accurate inference for the 20% subclass group.
 
 In conclusion, this report details a robust and statistically efficient two-stage stratified cluster sampling design tailored to the MDE's need for monitoring teenage smoking and drug use.
 By employing stratification across educational regions, probability proportional to size selection for schools, and systematic sampling of students within schools, the design ensures representative statewide and regional estimates while adhering to budget constraints.
