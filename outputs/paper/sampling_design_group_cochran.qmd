@@ -358,7 +358,7 @@ This operational rule preserves feasibility without altering theoretical inclusi
 The within-school sampling rate remains $\frac{m^*_h}{MOS_{hi}}$, maintaining epsem across students.
 For example, 5 small schools in Region 4 were linked to form a cluster of 10 meeting the required sample size of 19.729.
 Note that no oversize schools were identified that required splitting, and all selected schools acceptable size or linked as needed.
-Appendix 8 presents the within school sampling rate for the two selected strata in Appendix 7.
+Appendix 7 presents the within school sampling interval for the two selected strata in Table 3.
 
 ```{r}
 final_output <- linked_schools |> 
@@ -390,23 +390,25 @@ final_output <- linked_schools |>
 We implement the same systematic random sampling for the roster example of schools from Region 7.
 The randomly sampled middle school was from Region 7, the MOS for this school was 242, but the actual size is 219.
 This is the formula for calculating overall sampling fraction: $f_h = \frac{n_h MOS_{hi} }{\sum_{i \in h} MOS{hi} } \frac{m^*_h}{MOS_{hi}}$.
-We got the expected sample size of 14.53126, and we rounded it to 15.
+We got the expected sample size of 14.5313, and we rounded it to 15.
 To obtain the expected sample size, we first got the second-stage sampling rate is $\text{Sampling Rate} = \frac{m^*_{7}}{MOS_7} = \frac{16.05737}{242} = 0.06635277$, and then multiplied the rate by the actual sample size.
 
 To get the sampling interval $k_{hi} = MOS_{hi} / m^*_{h} = \frac{219}{15}$, we choose a random starting number between 1 and $k_{hi}$, which is 14.6, then we use the k-interval 146 to conduct the systematic sampling.
 Then we selected the student at the random start position (14) and every $k_{hi}$-th student thereafter from the ordered roster.
-The roaster of names is in Appendix 9.
+The roaster of names is in Appendix 8.
 
 ## Estimation Plan
 
-For this proposal, we use the paired selection model to help us estimate variance.
-However, we cannot form a pseudo-stratum from just one cluster nor have odd number of clusters, since paired methods require at least two units within a stratum.
-A key constraint for this approach is that each stratum must contain at least two independent variance units.
-We collapse strata that have odd number clusters or just one cluster with the adjacent stratum.
-In Appendix 7, we show collapsed strata and corresponding number of sampling error computation units (SECU); we collapsed regions 1 to 3 into stratum 1, regions 4 to 7 into stratum 2, and left regions 8 and 9 the same.
-We take all of the linked clusters and divide them by two to get the paired SECU count.
-We now have a total of 4 strata in this model, 3 SECUs for stratum 1, 103 SECUs for stratum 2, 77 SECUs for stratum 3, and 135 SECUs for stratum 4 resulting in a total of 318 SECUs across strata.
-In our estimation plan, each sampled unit (student) is assigned a stratum code indicating the explicit sampling stratum from which its PSU (clusters) was drawn.
+### *Pseudo Strata*
+
+We propose using the paired difference method and create pseudo-strata to estimate variance by using Taylor Series Linearization.
+However, since we cannot form a pseudo-stratum from one cluster nor have an odd number of clusters, each pseudo-stratum requires at least two units.
+We combine strata that have odd-number clusters or just one cluster with the adjacent stratum.
+We constructed 318 pseudo-strata, each containing a pair of sampled PSUs.
+We collapse region 1 to 3, then we randomly group odd and even selections of units in the stratum into two sampling error computation units (SECUs).
+For regions 4 to 7 we also collapse them, then group them into two SECUs.
+For region 8 and region 9, we keep them the same, each with 2 SECUs.
+Thus, we get 8 pseudo-strata in total.
 
 ```{r}
 
@@ -435,9 +437,10 @@ linked_schools <- linked_schools %>%
 #### *Variance Estimation*
 
 In this study, we need to estimate the proportion who have ever smoked, the proportion who have ever used marijuana, and the mean age at first use of cigarettes or marijuana.
-We did not consider using weight here since we maintained epsem design through the whole sampling process, which means every student has the same probability of being selected.
-However, in practice, we need to consider the response rate(the response rate among schools will be 30 percent, and the response rate among teenagers within schools will be 70 percent), which we should adjust our weight in design based on the response rate when conducting variance estimation.
-We decided to use Taylor Series Linearization to estimate the ratio estimator, which is approximated as: $\text{For all strata } n_h = 2$.
+We did not consider using weight here since we maintain epsem design through the whole sampling process, which means every student has the same probability of being selected.However, in practice, we need to consider the response rate (e.g., the response rate among schools will be 30 percent, and the response rate among teenagers within schools will be 70 percent), which we should adjust our weight in design based on the response rate when conducting variance estimation.
+We decided to use Taylor Series Linearization to estimate the ratio estimator, which is approximated as $\text{For all strata, } n_h = 2$.
+
+
 
 $$
 \text{var}(r) \approx \frac{1}{\hat{t}_x^2} \left[ \sum_h \text{var}(\hat{t}_{h,y}) + r^2 \sum_h \text{var}(\hat{t}_{h,x}) - 2r \sum_h \text{cov}(\hat{t}_{h,y}, \hat{t}_{h,x}) \right]
@@ -457,14 +460,12 @@ The general estimator used is the ratio estimator: $\hat{r} = \frac{\hat{t}_y}{\
 
 #### *Confidence Interval*
 
-A 95% confidence interval for the estimated proportion and mean $\hat{r}$ is given by: $\hat{r} \pm t_{df, 0.975} \cdot \text{SE}(\hat{r})$, where, $SE(\hat{r}) = \sqrt{\text{Var}(\hat{r})}$, and the df is equal to the number of SECUs minus the number of strata, which is 318-4 = 314.
-We conducted a simulation of the variance estimation of the proportion of students who ever smoked by applying the variance estimation formula, and we got: Ratio Estimator = 0.2505455, SE = 0.00003422286, 95% confidence interval \[0.2504782, 0.2506129\].
+A 95% confidence interval for the estimated proportion and mean $\hat{r}$ is given by: $\hat{r} \pm t_{df, 0.975} \cdot \text{SE}(\hat{r})$, where, $SE(\hat{r}) = \sqrt{\text{Var}(\hat{r})}$, and the df is equal to the number of pseudo strata which is 8. We conducted a simulation of the variance estimation of the proportion of students who ever smoked by applying the variance estimation formula, and we estimate the ratio to be 0.249946, SE = 0.000055, 95% confidence interval \[0.249815, 0.250069\].
 
 #### *Subclass Estimation*
 
-For the 20% subgroup, we used the same estimation and variance formulas, but applied them to a subset of the data that reflects 20% of the full population(lower-income households).
-However, the low-income students are only 20% of the population, which means some SECUs may contain a very small number of low-income students or no low-income students, thus, may not meet the expected subclass size per cluster ( $\text{expected }b^* \text{subclass pct} = 76.66519 \times 0.20 = 15.33304$).
-In that case, we might link undersized units to form linked units of the minimum sufficient size.
+For the 20\% subgroup, we used the same estimation and variance formulas, but applied them to a subset of the data that reflects 20\% of the full population(lower-income households). However,  some SECUs may contain a very small number of students. The expected sample size for this subgroup is 944.2 ($\text{total sample size } \times prop = 4721 \times 0.2 = 944.2$), and the expected subclass size per cluster is 15.33304 ( $E[b^{*}] \times subclass_{pct} = 76.66519 \times 0.20 = 15.33304$). Besides, some strata contain only one SECU, and which cannot allow for variance estimation. If too few SECUs contribute, degrees of freedom could be too low, affecting reliability. Low-income students might not be spread evenly across all PSUs, and if only a small number of students in the subclass are sampled per stratum, variance estimates will be unstable or undefined. Therefore, the design might not accommodate accurate inference for the 20\% subclass group.
+
 
 In conclusion, this report details a robust and statistically efficient two-stage stratified cluster sampling design tailored to the MDE's need for monitoring teenage smoking and drug use.
 By employing stratification across educational regions, probability proportional to size selection for schools, and systematic sampling of students within schools, the design ensures representative statewide and regional estimates while adhering to budget constraints.
@@ -586,26 +587,7 @@ linked_schools |>
 
 \newpage
 
-## Appendix 7: Pseudo Strata and SECU for Paired Sampling
-
-We present a table with the following pseudo strata that were combined to used paired sampling, as well as the number SECUs associated.
-
-```{r}
-
-# Print results
-final_clusters |> 
-  group_by(Region) |> 
-  reframe(Clusters = max(cluster_id)) |>  
-  ungroup() |> 
-  # collapse strata
-  mutate(Psuedo = c(1, 1, 1, 2, 2, 2, 2, 3, 4)) |> 
-  group_by(Psuedo) |> reframe(SECU = sum(Clusters)/2) |> 
-    kable(align = "c", booktabs = TRUE) 
-```
-
-\newpage
-
-## Appendix 8: Within-School Sampling Interval for 2 Strata
+## Appendix 7: Within-School Sampling Interval for 2 Strata
 
 We show the selection of schools below after selection for two strata and within-school sampling rate.
 The within-school sampling interval was calculated as the total student count divided by the target sample size (m_h_star).
@@ -623,7 +605,7 @@ final_output |>
 
 \newpage
 
-## Appendix 9: Students Selected From One School.
+## Appendix 8: Students Selected From One School.
 
 ```{r}
 
